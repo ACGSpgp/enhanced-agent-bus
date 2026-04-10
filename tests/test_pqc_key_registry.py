@@ -40,6 +40,7 @@ if not _pqc_registry_path.is_file():
     pytest.skip(
         f"Legacy PQC key registry source not found at {_pqc_registry_path}", allow_module_level=True
     )
+# intentional: tests src.core.services.policy_registry (out-of-package); requires stub parent module injection
 _spec = importlib.util.spec_from_file_location("pqc_key_registry_test_module", _pqc_registry_path)
 if _spec is None or _spec.loader is None:
     raise ImportError(f"Could not load module spec from {_pqc_registry_path}")

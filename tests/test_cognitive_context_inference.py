@@ -12,6 +12,7 @@ import pytest
 
 # Import directly from the module file to avoid pulling in graph_rag via __init__.py
 _module_path = Path(__file__).resolve().parents[1] / "cognitive" / "context_inference.py"
+# intentional: cognitive/__init__.py dep chain unavailable; load module directly to bypass
 _spec = importlib.util.spec_from_file_location(
     "enhanced_agent_bus.cognitive.context_inference", _module_path
 )

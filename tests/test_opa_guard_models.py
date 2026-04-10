@@ -5,43 +5,23 @@ Constitutional Hash: 608508a9bd224290
 Comprehensive tests for OPA guard data models.
 """
 
-import importlib.util
-import os
-import sys
-
 import pytest
 
 from enhanced_agent_bus._compat.constants import CONSTITUTIONAL_HASH
+from enhanced_agent_bus.deliberation_layer.opa_guard_models import (
+    GUARD_CONSTITUTIONAL_HASH,
+    CriticReview,
+    GuardDecision,
+    GuardResult,
+    ReviewResult,
+    ReviewStatus,
+    Signature,
+    SignatureResult,
+    SignatureStatus,
+)
 
 # Governance and constitutional compliance test markers
 pytestmark = [pytest.mark.governance, pytest.mark.constitutional]
-
-# Load module directly to work with conftest module isolation
-_parent_dir = os.path.dirname(os.path.dirname(__file__))
-_models_path = os.path.join(_parent_dir, "deliberation_layer", "opa_guard_models.py")
-
-
-def _load_module(name: str, path: str):
-    """Load a module directly from path."""
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-_opa_models = _load_module("_opa_guard_models", _models_path)
-
-# Import from loaded module
-GUARD_CONSTITUTIONAL_HASH = _opa_models.GUARD_CONSTITUTIONAL_HASH
-GuardDecision = _opa_models.GuardDecision
-SignatureStatus = _opa_models.SignatureStatus
-ReviewStatus = _opa_models.ReviewStatus
-GuardResult = _opa_models.GuardResult
-Signature = _opa_models.Signature
-SignatureResult = _opa_models.SignatureResult
-CriticReview = _opa_models.CriticReview
-ReviewResult = _opa_models.ReviewResult
 
 
 # ============================================================================
@@ -556,4 +536,5 @@ class TestModuleExports:
             "CriticReview",
             "ReviewResult",
         ]
-        assert set(_opa_models.__all__) == set(expected)
+        import enhanced_agent_bus.deliberation_layer.opa_guard_models as _m
+        assert set(_m.__all__) == set(expected)

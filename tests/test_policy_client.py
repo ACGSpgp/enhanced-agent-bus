@@ -36,6 +36,7 @@ def _load_module(name: str, path: str, mock_imports: dict | None = None):
         pkg.__package__ = "enhanced_agent_bus"
         sys.modules["enhanced_agent_bus"] = pkg
     qualified_name = f"enhanced_agent_bus.{name}"
+    # intentional: requires mock-dependency injection at load time; PolicyClient not re-exported at package level
     spec = importlib.util.spec_from_file_location(qualified_name, path)
     module = importlib.util.module_from_spec(spec)
     module.__package__ = "enhanced_agent_bus"

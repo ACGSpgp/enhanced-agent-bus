@@ -29,6 +29,7 @@ try:
 except ImportError as exc:
     pytest.skip(str(exc), allow_module_level=True)
 
+# intentional: compatibility shim re-exporting tests from tests/core/enhanced_agent_bus/
 _SPEC = importlib.util.spec_from_file_location("legacy_circuit_breaker_coverage", _SOURCE)
 if _SPEC is None or _SPEC.loader is None:
     raise ImportError(f"Unable to load compatibility tests from {_SOURCE}")

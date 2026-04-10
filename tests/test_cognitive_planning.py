@@ -17,6 +17,7 @@ import pytest
 # graph_rag (requires unavailable src.core.cognitive.graphrag.schema).
 _MOD_NAME = "enhanced_agent_bus.cognitive.planning"
 _MOD_PATH = Path(__file__).resolve().parent.parent / "cognitive" / "planning.py"
+# intentional: cognitive/__init__.py triggers graph_rag -> src.core.cognitive.graphrag.schema (unavailable); bypass required
 _spec = importlib.util.spec_from_file_location(_MOD_NAME, _MOD_PATH)
 assert _spec is not None and _spec.loader is not None
 _planning = importlib.util.module_from_spec(_spec)

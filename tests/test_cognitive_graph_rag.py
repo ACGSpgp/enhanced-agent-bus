@@ -102,6 +102,7 @@ _INJECTED_MODULES.append("src.core.cognitive.graphrag.schema")
 # which tries to import sibling modules (planning, context_inference).
 _MOD_NAME = "enhanced_agent_bus.cognitive.graph_rag"
 _MOD_PATH = Path(__file__).resolve().parent.parent / "cognitive" / "graph_rag.py"
+# intentional: same __init__.py dep chain as planning; bypass required to avoid src.core.cognitive.graphrag.schema
 _spec = importlib.util.spec_from_file_location(_MOD_NAME, _MOD_PATH)
 assert _spec and _spec.loader
 _graph_rag = importlib.util.module_from_spec(_spec)
