@@ -10,7 +10,10 @@ def test_workspace_import_resolution_prefers_current_checkout() -> None:
     original_path = list(sys.path)
     # Evict cached enhanced_agent_bus entries so find_spec resolves against
     # sys.path rather than returning the already-loaded module's spec.
-    evicted = {k: v for k, v in sys.modules.items() if k == "enhanced_agent_bus" or k.startswith("enhanced_agent_bus.")}
+    evicted = {
+        k: v for k, v in sys.modules.items()
+        if k == "enhanced_agent_bus" or k.startswith("enhanced_agent_bus.")
+    }
     try:
         for k in evicted:
             del sys.modules[k]

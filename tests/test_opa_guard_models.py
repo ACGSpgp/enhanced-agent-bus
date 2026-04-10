@@ -7,6 +7,7 @@ Comprehensive tests for OPA guard data models.
 
 import pytest
 
+import enhanced_agent_bus.deliberation_layer.opa_guard_models as _opa_guard_models
 from enhanced_agent_bus._compat.constants import CONSTITUTIONAL_HASH
 from enhanced_agent_bus.deliberation_layer.opa_guard_models import (
     GUARD_CONSTITUTIONAL_HASH,
@@ -536,5 +537,4 @@ class TestModuleExports:
             "CriticReview",
             "ReviewResult",
         ]
-        import enhanced_agent_bus.deliberation_layer.opa_guard_models as _m
-        assert set(_m.__all__) == set(expected)
+        assert set(_opa_guard_models.__all__) == set(expected)
