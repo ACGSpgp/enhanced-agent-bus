@@ -50,6 +50,22 @@ else:
 from enhanced_agent_bus.bus_types import JSONDict, JSONValue
 from enhanced_agent_bus.interfaces import ConstitutionalHashValidatorProtocol
 from enhanced_agent_bus.observability.structured_logging import get_logger
+from enhanced_agent_bus.signing_provider import resolve_signing_provider
+
+try:
+    from ...audit_client import AuditClient as _AuditClient
+    from ...audit_client import AuditClientConfig as _AuditClientConfig
+except ImportError:
+    AuditClient = None  # type: ignore[assignment]
+
+    class AuditClientConfig:  # type: ignore[no-redef]
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            self.service_url = kwargs.get("service_url", "http://localhost:8001")
+            self.signing_provider = kwargs.get("signing_provider")
+
+else:
+    AuditClient = _AuditClient
+    AuditClientConfig = _AuditClientConfig
 
 logger = get_logger(__name__)
 DELIBERATION_WORKFLOW_ERRORS = (
@@ -75,8 +91,7 @@ DELIBERATION_COMPENSATION_ERRORS = (
 
 
 class _AuditClientProtocol(Protocol):
-    async def record(self, message_id: str, workflow_result: JSONDict) -> str:
-        ...
+    async def record(self, message_id: str, workflow_result: JSONDict) -> str: ...
 
 
 class WorkflowStatus(Enum):
@@ -398,11 +413,13 @@ class DefaultDeliberationActivities:
 
     @staticmethod
     def _create_audit_client() -> _AuditClientProtocol | None:
-        try:
-            from ...audit_client import AuditClient
-        except ImportError:
+        if AuditClient is None:
             return None
-        return AuditClient()
+        return AuditClient(
+            config=AuditClientConfig(
+                signing_provider=resolve_signing_provider(),
+            )
+        )
 
     @staticmethod
     def _build_fallback_audit_hash(workflow_result: JSONDict) -> str:

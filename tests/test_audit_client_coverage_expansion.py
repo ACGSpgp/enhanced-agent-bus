@@ -22,6 +22,7 @@ from audit_client import (
     initialize_audit_client,
 )
 from enhanced_agent_bus._compat.types import JSONDict
+from enhanced_agent_bus.signing_provider import HsmSigningProvider
 
 # =============================================================================
 # Test Data Classes
@@ -99,6 +100,12 @@ class TestAuditClientConfig:
         assert client.service_url == "http://custom:8080"
         assert client.config.timeout == 15.0
         assert client.config.enable_batching is False
+
+    def test_config_supports_signing_provider(self) -> None:
+        provider = HsmSigningProvider(secret=b"signing-secret", key_id="audit-hsm")
+        config = AuditClientConfig(signing_provider=provider)
+
+        assert config.signing_provider is provider
 
 
 # =============================================================================
@@ -223,9 +230,20 @@ class TestAuditClientLifecycle:
         worker = client._batch_worker
 
         await client.stop()
-
         assert client._running is False
         assert worker.done() or worker.cancelled()
+
+
+class TestAuditSigning:
+    def test_serialize_validation_result_attaches_signature_metadata(self) -> None:
+        provider = HsmSigningProvider(secret=b"audit-secret", key_id="audit-hsm")
+        client = AuditClient(config=AuditClientConfig(signing_provider=provider))
+
+        payload = client._serialize_validation_result(MockValidationResult(True, "msg-123"))
+
+        assert payload["signature"]
+        assert payload["signature_metadata"]["provider"] == "hsm"
+        assert payload["signature_metadata"]["key_id"] == "audit-hsm"
 
 
 # =============================================================================

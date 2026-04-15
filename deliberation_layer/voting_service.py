@@ -34,6 +34,7 @@ except ImportError:
 else:
     _get_election_store = getattr(_redis_election_store, "get_election_store", None)
 
+
 class _VotingSettingsProtocol(Protocol):
     default_timeout_seconds: int
 
@@ -193,6 +194,7 @@ class VotingService:
         participants: list[str],
         timeout: int | None = None,
         participant_weights: dict[str, float] | None = None,
+        adaptive_quorum: JSONDict | None = None,
     ) -> str:
         """
         Create a new voting process for a high-impact message.
@@ -221,6 +223,11 @@ class VotingService:
         # Build participant weights dict (default 1.0 for all)
         weights = participant_weights or {}
         participant_weights_dict = {pid: weights.get(pid, 1.0) for pid in participants}
+        required_approval_weight = None
+        if isinstance(adaptive_quorum, dict):
+            raw_required_votes = adaptive_quorum.get("required_votes")
+            if isinstance(raw_required_votes, (int, float)):
+                required_approval_weight = float(raw_required_votes)
 
         # Get tenant_id from message
         tenant_id = getattr(message, "tenant_id", None) or "default"
@@ -236,6 +243,8 @@ class VotingService:
             "status": "OPEN",
             "created_at": created_at,
             "expires_at": expires_at,
+            "adaptive_quorum": adaptive_quorum or {},
+            "required_approval_weight": required_approval_weight,
         }
 
         # Save to Redis if available
@@ -392,8 +401,15 @@ class VotingService:
 
         strategy = self._get_voting_strategy(election_data)
         weight_info = self._calculate_vote_weights(election_data)
+        required_approval_weight = election_data.get("required_approval_weight")
+        if not isinstance(required_approval_weight, (int, float)):
+            required_approval_weight = None
 
-        resolved, decision = self._evaluate_strategy_resolution(strategy, weight_info)
+        resolved, decision = self._evaluate_strategy_resolution(
+            strategy,
+            weight_info,
+            float(required_approval_weight) if required_approval_weight is not None else None,
+        )
 
         if resolved:
             await self._finalize_election_result(election_id, election_data, decision)
@@ -428,14 +444,16 @@ class VotingService:
 
     @staticmethod
     def _evaluate_strategy_resolution(
-        strategy: VotingStrategy, weight_info: tuple[float, float, float]
+        strategy: VotingStrategy,
+        weight_info: tuple[float, float, float],
+        required_approval_weight: float | None = None,
     ) -> tuple[bool, str]:
         """Evaluate if an election should be resolved based on strategy and weights."""
         approvals_weight, denials_weight, total_weight = weight_info
 
         if strategy == VotingStrategy.QUORUM:
             return VotingService._check_quorum_resolution(
-                approvals_weight, denials_weight, total_weight
+                approvals_weight, denials_weight, total_weight, required_approval_weight
             )
         elif strategy == VotingStrategy.UNANIMOUS:
             return VotingService._check_unanimous_resolution(
@@ -450,11 +468,21 @@ class VotingService:
 
     @staticmethod
     def _check_quorum_resolution(
-        approvals: float, denials: float, total: float
+        approvals: float,
+        denials: float,
+        total: float,
+        required_approval_weight: float | None = None,
     ) -> tuple[bool, str]:
         """Check quorum (50% + 1) resolution."""
-        if approvals > total / 2:
+        approval_threshold = (
+            required_approval_weight if required_approval_weight is not None else (total / 2)
+        )
+        if approvals > total / 2 and required_approval_weight is None:
             return True, "APPROVE"
+        if required_approval_weight is not None and approvals >= approval_threshold:
+            return True, "APPROVE"
+        if required_approval_weight is not None and (total - denials) < approval_threshold:
+            return True, "DENY"
         elif denials >= total / 2:
             return True, "DENY"
         return False, "DENY"

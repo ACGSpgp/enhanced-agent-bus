@@ -750,6 +750,40 @@ class TestDefaultDeliberationActivities:
         assert isinstance(result, str)
         assert len(result) == 16
 
+    async def test_create_audit_client_routes_signing_provider(self):
+        from enhanced_agent_bus.deliberation_layer.workflows.deliberation_workflow import (
+            DefaultDeliberationActivities,
+        )
+        from enhanced_agent_bus.signing_provider import HsmSigningProvider
+
+        provider = HsmSigningProvider(secret=b"delib-secret", key_id="delib-hsm")
+        captured = {}
+
+        class DummyAuditClientConfig:
+            def __init__(self, *args, **kwargs):
+                captured["signing_provider"] = kwargs.get("signing_provider")
+
+        class DummyAuditClient:
+            def __init__(self, *args, **kwargs):
+                captured["config"] = kwargs.get("config")
+
+        with patch(
+            "enhanced_agent_bus.deliberation_layer.workflows.deliberation_workflow.resolve_signing_provider",
+            lambda: provider,
+        ):
+            with patch(
+                "enhanced_agent_bus.deliberation_layer.workflows.deliberation_workflow.AuditClientConfig",
+                DummyAuditClientConfig,
+            ):
+                with patch(
+                    "enhanced_agent_bus.deliberation_layer.workflows.deliberation_workflow.AuditClient",
+                    DummyAuditClient,
+                ):
+                    client = DefaultDeliberationActivities._create_audit_client()
+
+        assert client is not None
+        assert captured["signing_provider"] is provider
+
     async def test_record_audit_trail_raises_on_audit_failure(self):
         """Runtime failures from the audit backend must surface to callers."""
         from enhanced_agent_bus.deliberation_layer.workflows.deliberation_workflow import (

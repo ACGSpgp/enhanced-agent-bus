@@ -11,7 +11,7 @@ Provides configurable impact scoring with support for:
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Protocol, TypeAlias
+from typing import TYPE_CHECKING, Any, Protocol, TypeAlias, cast
 
 import numpy as np
 
@@ -54,6 +54,12 @@ class UnloadableImpactScorer(ImpactScorer, Protocol):
 
     def unload(self) -> None:
         """Release model resources."""
+        ...
+
+
+class BatchImpactScorer(ImpactScorer, Protocol):
+    def score_batch(self, contexts: list[JSONDict]) -> list[ScoringResult]:
+        """Compute scores for a batch of contexts."""
         ...
 
 
@@ -218,6 +224,45 @@ class ImpactScoringService:
         if isinstance(message, dict):
             merged_context["content"] = message.get("content", message)
         return self.calculate_message_impact(message, merged_context)
+
+    def get_impact_scores_batch(self, contexts: list[JSONDict]) -> list[ScoringResult]:
+        """Batch score contexts, using scorer-native batching when available."""
+        if not contexts:
+            return []
+
+        semantic_results: list[ScoringResult] = []
+        statistical_results: list[ScoringResult] = []
+
+        semantic_scorer: ImpactScorer | None = None
+        if (
+            self._minicpm_available
+            and self.config.prefer_minicpm_semantic
+            and ScoringMethod.MINICPM_SEMANTIC in self.scorers
+        ):
+            semantic_scorer = self.scorers[ScoringMethod.MINICPM_SEMANTIC]
+        elif ScoringMethod.SEMANTIC in self.scorers:
+            semantic_scorer = self.scorers[ScoringMethod.SEMANTIC]
+
+        if semantic_scorer is not None:
+            if hasattr(semantic_scorer, "score_batch"):
+                semantic_results = cast(BatchImpactScorer, semantic_scorer).score_batch(contexts)
+            else:
+                semantic_results = [semantic_scorer.score(context) for context in contexts]
+
+        if ScoringMethod.STATISTICAL in self.scorers:
+            statistical_results = [
+                self.scorers[ScoringMethod.STATISTICAL].score(context) for context in contexts
+            ]
+
+        combined_results: list[ScoringResult] = []
+        for index in range(len(contexts)):
+            parts: list[ScoringResult] = []
+            if semantic_results:
+                parts.append(semantic_results[index])
+            if statistical_results:
+                parts.append(statistical_results[index])
+            combined_results.append(self.ensemble.combine(parts))
+        return combined_results
 
     async def calculate_impact_score_async(
         self, message: JSONDict, context: JSONDict | None = None

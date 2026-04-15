@@ -5,6 +5,7 @@ Constitutional Hash: 608508a9bd224290
 import asyncio
 import copy
 import hashlib
+import os
 import random
 import time
 from collections.abc import Callable, Coroutine
@@ -38,6 +39,7 @@ from .governance_core import (
     SwarmGovernanceCore,
     normalize_governance_core_mode,
 )
+from .tee_attestation import LocalTeeAttestationProvider, SgxQuoteAttestationProvider
 
 # Feature flags
 _flags = get_feature_flags()
@@ -104,6 +106,7 @@ else:
         _ = fail_closed
         return None
 
+
 _ImportedOPAClient: Any | None
 if _opa_client_module is not None:
     _ImportedOPAClient = _opa_client_module.OPAClient
@@ -127,6 +130,7 @@ else:
     def get_policy_client(fail_closed: bool | None = None) -> object | None:
         _ = fail_closed
         return None
+
 
 try:
     import enhanced_agent_bus_rust as rust_bus
@@ -272,7 +276,9 @@ class MessageProcessor:
 
     def __init__(self, **kwargs: object) -> None:
         self._isolated_mode = bool(kwargs.get("isolated_mode", False))
-        self.config = cast(BusConfiguration, kwargs.get("config") or BusConfiguration.from_environment())
+        self.config = cast(
+            BusConfiguration, kwargs.get("config") or BusConfiguration.from_environment()
+        )
         self._use_dynamic_policy = bool(
             kwargs.get("use_dynamic_policy", self.config.use_dynamic_policy)
             and POLICY_CLIENT_AVAILABLE
@@ -288,7 +294,8 @@ class MessageProcessor:
             raise ValueError(f"Invalid cache_hash_mode: {cache_hash_mode}")
         self._cache_hash_mode = cast(Literal["sha256", "fast"], cache_hash_mode)
         self._handlers: dict[
-            MessageType, list[Callable[[AgentMessage], Coroutine[object, object, AgentMessage | None]]]
+            MessageType,
+            list[Callable[[AgentMessage], Coroutine[object, object, AgentMessage | None]]],
         ] = {}
         self._processed_count, self._failed_count = 0, 0
         self._background_tasks: set[asyncio.Task[object]] = set()
@@ -330,13 +337,51 @@ class MessageProcessor:
                 getattr(self.config, "governance_swarm_use_manifold", False),
             )
         )
+        self._governance_danger_signals_enabled = bool(
+            kwargs.get(
+                "governance_swarm_danger_signals_enabled",
+                getattr(self.config, "governance_swarm_danger_signals_enabled", False),
+            )
+        )
+        self._governance_adaptive_quorum_enabled = bool(
+            kwargs.get(
+                "governance_swarm_adaptive_quorum_enabled",
+                getattr(self.config, "governance_swarm_adaptive_quorum_enabled", False),
+            )
+        )
+        self._governance_tee_enabled = bool(
+            kwargs.get(
+                "governance_tee_enabled",
+                getattr(self.config, "governance_tee_enabled", False),
+            )
+        )
+        self._governance_tee_mode = str(
+            kwargs.get(
+                "governance_tee_mode",
+                getattr(self.config, "governance_tee_mode", "local"),
+            )
+        )
+        self._governance_attestation_provider = kwargs.get("governance_attestation_provider")
+        if self._governance_attestation_provider is None and self._governance_tee_enabled:
+            if self._governance_tee_mode == "sgx" and os.getenv("GOVERNANCE_TEE_SGX_QUOTE"):
+                self._governance_attestation_provider = SgxQuoteAttestationProvider(
+                    quote=os.getenv("GOVERNANCE_TEE_SGX_QUOTE", ""),
+                )
+            else:
+                self._governance_attestation_provider = LocalTeeAttestationProvider(
+                    mode=self._governance_tee_mode,
+                )
         self._legacy_governance_core = LegacyGovernanceCore(
-            expected_constitutional_hash=self.constitutional_hash
+            expected_constitutional_hash=self.constitutional_hash,
+            attestation_provider=self._governance_attestation_provider,
         )
         self._swarm_governance_core = kwargs.get("governance_core") or SwarmGovernanceCore(
             expected_constitutional_hash=self.constitutional_hash,
             enable_peer_validation=self._governance_peer_validation_enabled,
             use_manifold=self._governance_manifold_enabled,
+            enable_danger_signals=self._governance_danger_signals_enabled,
+            enable_adaptive_quorum=self._governance_adaptive_quorum_enabled,
+            attestation_provider=self._governance_attestation_provider,
         )
         self._audit_client = kwargs.get("audit_client")
         self._workflow_repository = kwargs.get("workflow_repository")
@@ -866,7 +911,9 @@ class MessageProcessor:
         self._sync_coordinator_runtime()
         return await self._verification_coordinator.execute(context)
 
-    def _setup_memory_profiling_context(self, msg: AgentMessage) -> AbstractAsyncContextManager[None]:
+    def _setup_memory_profiling_context(
+        self, msg: AgentMessage
+    ) -> AbstractAsyncContextManager[None]:
         """set up memory profiling context for message processing."""
         profiler = get_memory_profiler()
         operation_name = f"message_processing_{msg.message_type.value}_{msg.priority.value}"
@@ -874,7 +921,7 @@ class MessageProcessor:
             AbstractAsyncContextManager[None],
             profiler.profile_async(operation_name, trace_id=msg.message_id)
             if profiler and profiler.config.enabled
-            else _null_async_context()
+            else _null_async_context(),
         )
 
     async def _attach_session_context(
@@ -1220,6 +1267,9 @@ class MessageProcessor:
             "governance_swarm_available": self._governance_coordinator.is_swarm_available(),
             "governance_swarm_peer_validation_enabled": self._governance_peer_validation_enabled,
             "governance_swarm_use_manifold": self._governance_manifold_enabled,
+            "governance_swarm_danger_signals_enabled": self._governance_danger_signals_enabled,
+            "governance_swarm_adaptive_quorum_enabled": self._governance_adaptive_quorum_enabled,
+            "governance_tee_enabled": self._governance_tee_enabled,
             "governance_shadow_matches": self._governance_coordinator.shadow_matches,
             "governance_shadow_mismatches": self._governance_coordinator.shadow_mismatches,
             "governance_shadow_errors": self._governance_coordinator.shadow_errors,

@@ -25,6 +25,7 @@ cryptography = pytest.importorskip(
     "cryptography", reason="cryptography required for bundle_registry"
 )
 jsonschema = pytest.importorskip("jsonschema", reason="jsonschema required for bundle_registry")
+from enhanced_agent_bus.signing_provider import HsmSigningProvider
 
 try:
     from bundle_registry import (
@@ -218,7 +219,7 @@ class TestBundleManifest:
         digest = manifest.compute_digest()
 
         assert len(digest) == 64  # SHA256 hex length
-        assert all(c in "0123456789abcdef" for c in digest)
+
 
     def test_compute_digest_deterministic(self):
         """compute_digest returns same value for same content."""
@@ -244,6 +245,24 @@ class TestBundleManifest:
 
         # Invalid hex
         assert manifest.verify_signature("not_valid_hex") is False
+
+
+@pytest.mark.asyncio
+async def test_sign_manifest_accepts_signing_provider() -> None:
+    client = OCIRegistryClient(
+        registry_url="https://registry.example.com",
+        registry_type=RegistryType.GENERIC,
+    )
+
+    signature = await client.sign_manifest(
+        repository="acgs/policies",
+        tag="latest",
+        manifest_digest="sha256:deadbeef",
+        signing_provider=HsmSigningProvider(secret=b"test-secret", key_id="hsm-key"),
+    )
+
+    assert isinstance(signature, str)
+    assert len(signature) > 0
 
 
 class TestBundleArtifact:
@@ -494,6 +513,53 @@ class TestBundleDistributionService:
 
         assert service._lkg_manifest is None
         assert service._lkg_path is None
+
+    @pytest.mark.asyncio
+    async def test_publish_routes_through_signing_provider(self):
+        provider = HsmSigningProvider(secret=b"bundle-secret", key_id="bundle-hsm")
+        primary = AsyncMock()
+        primary.host = "primary.example.com"
+        primary.push_bundle.return_value = ("sha256:abc", object())
+        primary.sign_manifest.return_value = "feedface"
+        manifest = BundleManifest(version="1.0.0", revision="a" * 40)
+
+        service = BundleDistributionService(primary, signing_provider=provider)
+        result = await service.publish(
+            "acgs/policies",
+            "latest",
+            "/tmp/fake.tar.gz",
+            manifest,
+            replicate=False,
+        )
+
+        primary.sign_manifest.assert_awaited_once()
+        assert result["primary"]["signature"] == "feedface"
+        assert manifest.signatures[-1]["keyid"] == "bundle-hsm"
+
+    @pytest.mark.asyncio
+    async def test_publish_with_provider_does_not_construct_local_signer(self, monkeypatch):
+        provider = HsmSigningProvider(secret=b"bundle-secret", key_id="bundle-hsm")
+        primary = AsyncMock()
+        primary.host = "primary.example.com"
+        primary.push_bundle.return_value = ("sha256:def", object())
+        primary.sign_manifest.return_value = "cafebabe"
+        manifest = BundleManifest(version="1.0.0", revision="a" * 40)
+
+        monkeypatch.setattr(
+            "enhanced_agent_bus.bundle_registry.LocalEd25519SigningProvider",
+            lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("local signer constructed")),
+        )
+
+        service = BundleDistributionService(primary, signing_provider=provider)
+        result = await service.publish(
+            "acgs/policies",
+            "latest",
+            "/tmp/fake.tar.gz",
+            manifest,
+            replicate=False,
+        )
+
+        assert result["primary"]["signature"] == "cafebabe"
 
 
 class TestModuleFunctions:

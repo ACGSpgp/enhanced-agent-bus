@@ -24,6 +24,13 @@ from .capability_passport import (
     infer_domain,
     reset_passport_registry,
 )
+from .danger_signal import (
+    AdaptiveQuorumDecision,
+    AdaptiveQuorumMode,
+    DangerSeverity,
+    DangerSignal,
+    DangerSignalAnalyzer,
+)
 from .democratic_governance import (
     DemocraticConstitutionalGovernance,
     ccai_governance,
@@ -48,6 +55,11 @@ __all__ = [
     "CapabilityDomain",
     "CapabilityPassport",
     "DomainAutonomy",
+    "DangerSeverity",
+    "DangerSignal",
+    "DangerSignalAnalyzer",
+    "AdaptiveQuorumMode",
+    "AdaptiveQuorumDecision",
     "PassportRegistry",
     "get_passport_registry",
     "infer_domain",

@@ -93,3 +93,59 @@ async def test_submit_proposal_accepts_valid_proposer_signature(monkeypatch):
     assert election_id == "election-1"
     proposal_engine.create_proposal.assert_awaited_once()
     voting_service.create_election.assert_awaited_once()
+    _, kwargs = voting_service.create_election.await_args
+    assert kwargs["adaptive_quorum"] is None
+
+
+async def test_submit_proposal_passes_adaptive_quorum_when_enabled(monkeypatch):
+    private_key = ed25519.Ed25519PrivateKey.generate()
+    public_key = (
+        private_key.public_key()
+        .public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        .hex()
+    )
+
+    proposal = SimpleNamespace(id="proposal-1", proposal_id="proposal-1")
+    proposal_engine = AsyncMock()
+    proposal_engine.create_proposal.return_value = SimpleNamespace(proposal=proposal)
+
+    voting_service = AsyncMock()
+    voting_service.create_election.return_value = "election-1"
+
+    class DummyMessageType:
+        GOVERNANCE_REQUEST = "governance_request"
+
+    class DummyAgentMessage:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+    import enhanced_agent_bus.constitutional.council as council_module
+
+    monkeypatch.setattr(council_module, "AgentMessage", DummyAgentMessage)
+    monkeypatch.setattr(council_module, "MessageType", DummyMessageType)
+
+    service = ConstitutionalCouncilService(
+        voting_service=voting_service,
+        proposal_engine=proposal_engine,
+        council_members={"proposer-1": public_key, "reviewer-1": "11" * 16, "reviewer-2": "22" * 16},
+        enable_adaptive_quorum=True,
+        enable_danger_signals=True,
+    )
+
+    request = SimpleNamespace(
+        proposer_agent_id="proposer-1",
+        proposed_changes={"policy": {"patient_override": "enabled"}},
+        justification="Critical patient transfer override requested for clinical workflow safety",
+    )
+
+    signature = _sign_payload(private_key, _proposal_payload(request))
+    await service.submit_proposal(request, proposer_signature=signature)
+
+    _, kwargs = voting_service.create_election.await_args
+    adaptive_quorum = kwargs["adaptive_quorum"]
+    assert adaptive_quorum is not None
+    assert adaptive_quorum["required_votes"] >= 2
+    assert adaptive_quorum["baseline_mode"] == "constitutional_council_min_quorum"

@@ -193,15 +193,18 @@ class ImpactScorer:
         if _model_dir:
             try:
                 from acgs_lite_rust import ImpactScorer as _RustImpactScorer  # type: ignore[import]
+
                 self._rust_scorer = _RustImpactScorer(model_dir=_model_dir, device="cpu")
                 self._bert_enabled = True
                 import structlog as _sl
+
                 _sl.get_logger(__name__).info(
                     "ImpactScorer: Rust DistilBERT loaded",
                     model_dir=_model_dir,
                 )
             except (ImportError, OSError, RuntimeError) as _e:
                 import structlog as _sl
+
                 _sl.get_logger(__name__).warning(
                     "ImpactScorer: Rust model unavailable, falling back to keyword scoring",
                     error=type(_e).__name__,
@@ -326,7 +329,10 @@ class ImpactScorer:
         """
         if not self.loco_operator_available or self._loco_client is None:
             return None
-        return cast(object | None, await cast(Any, self._loco_client).score_governance_action(action, context))
+        return cast(
+            object | None,
+            await cast(Any, self._loco_client).score_governance_action(action, context),
+        )
 
     def get_governance_vector(self, context: JSONDict) -> dict[str, float] | None:
         """
@@ -376,7 +382,9 @@ class ImpactScorer:
             message = {}
 
         message_dict: JSONDict = (
-            message if isinstance(message, dict) else cast(JSONDict, getattr(message, "__dict__", {}))
+            message
+            if isinstance(message, dict)
+            else cast(JSONDict, getattr(message, "__dict__", {}))
         )
 
         msg_from = (
@@ -638,12 +646,48 @@ class ImpactScorer:
         """
         Batch score impact for multiple messages.
         """
+        if not messages:
+            return []
         if contexts is None:
             contexts = [{} for _ in range(len(messages))]
         elif len(contexts) != len(messages):
             raise ValueError(
                 f"contexts length ({len(contexts)}) must match messages length ({len(messages)})"
             )
+        if self._onnx_enabled and self._optimizer:
+            return self.score_messages_batch(messages)
+
+        merged_contexts = []
+        for message, context in zip(messages, contexts, strict=False):
+            merged_context = {**context}
+            if isinstance(message, dict):
+                merged_context["content"] = message.get("content", message)
+            merged_contexts.append(merged_context)
+
+        if self._bert_enabled and self._rust_scorer is not None and hasattr(
+            self._rust_scorer, "score_batch"
+        ):
+            try:
+                batch_scores = self._rust_scorer.score_batch(
+                    [self._extract_text_content(message) for message in messages]
+                )
+                return [float(score) for score in batch_scores]
+            except Exception as exc:
+                logger.warning(
+                    "ImpactScorer: Rust batch scoring unavailable, falling back",
+                    error=type(exc).__name__,
+                )
+
+        if self._enable_minicpm and hasattr(self.service, "get_impact_scores_batch"):
+            try:
+                batch_results = self.service.get_impact_scores_batch(merged_contexts)
+                return [float(result.aggregate_score) for result in batch_results]
+            except Exception as exc:
+                logger.warning(
+                    "ImpactScorer: service batch scoring unavailable, falling back",
+                    error=type(exc).__name__,
+                )
+
         return [self.calculate_impact_score(m, c) for m, c in zip(messages, contexts, strict=False)]
 
     def reset_history(self) -> None:
@@ -665,6 +709,7 @@ class ImpactScorer:
                 return float(self._rust_scorer.score(text))  # type: ignore[union-attr]
             except Exception as _e:
                 import structlog as _sl
+
                 _sl.get_logger(__name__).warning(
                     "ImpactScorer: Rust scorer error, falling back to keywords",
                     error=type(_e).__name__,

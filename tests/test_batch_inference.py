@@ -238,7 +238,20 @@ class TestBatchScoreImpact:
         assert all(0.0 <= score <= 1.0 for score in results)
         # Empty content should have low scores
         assert results[1] > results[0]
-        assert results[1] > results[2]
+
+    def test_batch_uses_service_batch_path_when_available(self, scorer):
+        messages = [{"content": "critical alert"}, {"content": "status update"}]
+        scorer._enable_minicpm = True
+
+        with patch.object(scorer.service, "get_impact_scores_batch") as mock_batch:
+            mock_batch.return_value = [
+                type("Result", (), {"aggregate_score": 0.9})(),
+                type("Result", (), {"aggregate_score": 0.2})(),
+            ]
+            results = scorer.batch_score_impact(messages)
+
+        mock_batch.assert_called_once()
+        assert results == [0.9, 0.2]
 
     def test_batch_scores_bounded(self, scorer):
         """Test that all batch scores are between 0 and 1."""

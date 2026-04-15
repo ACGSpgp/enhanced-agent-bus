@@ -31,6 +31,7 @@ from enhanced_agent_bus.constitutional.review_api import (
     router,
 )
 from enhanced_agent_bus.maci.models import MACIValidationResult
+from enhanced_agent_bus.signing_provider import HsmSigningProvider
 
 
 def _make_amendment(**kwargs):
@@ -213,6 +214,32 @@ async def test_health_check():
     assert result["service"] == "constitutional-review-api"
     assert "constitutional_hash" in result
     assert "timestamp" in result
+
+
+@pytest.mark.asyncio
+async def test_create_review_dependencies_routes_signing_provider():
+    import enhanced_agent_bus.constitutional.review_api as review_api_module
+
+    provider = HsmSigningProvider(secret=b"review-secret", key_id="review-hsm")
+    captured: dict[str, object] = {}
+    mock_storage = AsyncMock()
+
+    class DummyAuditClientConfig:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            captured["signing_provider"] = kwargs.get("signing_provider")
+
+    class DummyAuditClient:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            captured["config"] = kwargs.get("config")
+
+    with _review_api_patch("ConstitutionalStorageService", MagicMock(return_value=mock_storage)):
+        with _review_api_patch("resolve_signing_provider", lambda: provider):
+            with _review_api_patch("AuditClientConfig", DummyAuditClientConfig):
+                with _review_api_patch("AuditClient", DummyAuditClient):
+                    deps = await review_api_module._create_review_dependencies()
+
+    assert captured["signing_provider"] is provider
+    assert deps.audit_client is not None
 
 
 @pytest.mark.asyncio

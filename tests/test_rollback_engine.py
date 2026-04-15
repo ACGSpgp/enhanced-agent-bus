@@ -40,6 +40,7 @@ from enhanced_agent_bus.constitutional.rollback_engine import (
     _build_rollback_step,
     _resolve_rollback_activity_callable,
 )
+from enhanced_agent_bus.signing_provider import HsmSigningProvider
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -187,6 +188,27 @@ class TestInitialize:
             await act.initialize()
 
         assert act._audit_client is None
+        await act._http_client.aclose()
+
+    @pytest.mark.asyncio
+    async def test_initialize_routes_signing_provider_to_audit_client(self) -> None:
+        mock_audit_cls = MagicMock()
+        mock_instance = MagicMock()
+        mock_instance.start = AsyncMock()
+        mock_audit_cls.return_value = mock_instance
+        provider = HsmSigningProvider(secret=b"rollback-secret", key_id="rollback-hsm")
+
+        act = _make_activities()
+        with (
+            patch("enhanced_agent_bus.constitutional.rollback_engine.REDIS_AVAILABLE", False),
+            patch("enhanced_agent_bus.constitutional.rollback_engine.OPAClient", None),
+            patch("enhanced_agent_bus.constitutional.rollback_engine.AuditClient", mock_audit_cls),
+            patch("enhanced_agent_bus.constitutional.rollback_engine.resolve_signing_provider", lambda: provider),
+        ):
+            await act.initialize()
+
+        _, kwargs = mock_audit_cls.call_args
+        assert kwargs["config"].signing_provider is provider
         await act._http_client.aclose()
 
     @pytest.mark.asyncio

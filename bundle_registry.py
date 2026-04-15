@@ -44,6 +44,11 @@ except ImportError:
     JSONDict = dict  # type: ignore[misc,assignment]
 
 from enhanced_agent_bus.observability.structured_logging import get_logger
+from enhanced_agent_bus.signing_provider import (
+    LocalEd25519SigningProvider,
+    SigningProvider,
+    resolve_signing_provider,
+)
 
 logger = get_logger(__name__)
 T = TypeVar("T")
@@ -862,20 +867,26 @@ class OCIRegistryClient:
                 os.unlink(tmp_path)
 
     async def sign_manifest(
-        self, repository: str, tag: str, manifest_digest: str, private_key_hex: str
+        self,
+        repository: str,
+        tag: str,
+        manifest_digest: str,
+        private_key_hex: str | None = None,
+        signing_provider: SigningProvider | None = None,
     ) -> str:
         """
         Create a Cosign-compatible signature artifact and push it.
         Media type: application/vnd.dev.sigstore.cosign.v1.sig
         """
         try:
-            # Load private key
-            private_key = ed25519.Ed25519PrivateKey.from_private_bytes(
-                bytes.fromhex(private_key_hex)
-            )
+            provider = signing_provider
+            if provider is None:
+                if not private_key_hex:
+                    raise ValueError("private_key_hex or signing_provider is required")
+                provider = LocalEd25519SigningProvider(private_key_hex=private_key_hex)
 
             # Signature payload: manifest digest
-            signature = private_key.sign(manifest_digest.encode())
+            signature = provider.sign(manifest_digest.encode())
             sig_hex = signature.hex()
 
             # Cosign-style signature tag: tag.sig (used in manifest reference)
@@ -955,10 +966,12 @@ class BundleDistributionService:
         primary_registry: OCIRegistryClient,
         fallback_registries: list[OCIRegistryClient] | None = None,
         cache_dir: str = "runtime/bundle_cache",
+        signing_provider: SigningProvider | None = None,
     ):
         self.primary = primary_registry
         self.fallbacks = fallback_registries or []
         self.cache_dir = cache_dir
+        self.signing_provider = resolve_signing_provider(signing_provider)
         os.makedirs(cache_dir, exist_ok=True)
 
         self._lkg_manifest: BundleManifest | None = None
@@ -980,6 +993,19 @@ class BundleDistributionService:
         # Push to primary
         digest, _artifact = await self.primary.push_bundle(repository, tag, bundle_path, manifest)
         results["primary"] = {"digest": digest, "registry": self.primary.host}
+        if self.signing_provider is not None:
+            signature = await self.primary.sign_manifest(
+                repository,
+                tag,
+                digest,
+                signing_provider=self.signing_provider,
+            )
+            manifest.add_signature(
+                self.signing_provider.key_id,
+                signature,
+                self.signing_provider.algorithm,
+            )
+            results["primary"]["signature"] = signature
 
         # Replicate to fallbacks
         if replicate:
@@ -988,8 +1014,21 @@ class BundleDistributionService:
                     fb_digest, _ = await fallback.push_bundle(
                         repository, tag, bundle_path, manifest
                     )
+                    replica_result: JSONDict = {
+                        "digest": fb_digest,
+                        "registry": fallback.host,
+                        "status": "success",
+                    }
+                    if self.signing_provider is not None:
+                        replica_signature = await fallback.sign_manifest(
+                            repository,
+                            tag,
+                            fb_digest,
+                            signing_provider=self.signing_provider,
+                        )
+                        replica_result["signature"] = replica_signature
                     results["replicas"].append(
-                        {"digest": fb_digest, "registry": fallback.host, "status": "success"}
+                        replica_result
                     )
                 except Exception as e:
                     results["replicas"].append(

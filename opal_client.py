@@ -43,11 +43,13 @@ except ImportError:
     JSONDict = dict  # type: ignore[misc,assignment]
 
 from enhanced_agent_bus.observability.structured_logging import get_logger
+from enhanced_agent_bus.signing_provider import resolve_signing_provider
 
 try:
-    from .audit_client import AuditClient
+    from .audit_client import AuditClient, AuditClientConfig
 except ImportError:
     AuditClient = None  # type: ignore[assignment,misc]
+    AuditClientConfig = None  # type: ignore[assignment,misc]
 
 try:
     from .opa_client import OPAClient
@@ -197,9 +199,14 @@ class OPALPolicyClient:
         )
 
         # Initialise audit client
-        if AuditClient:
+        if AuditClient and AuditClientConfig:
             try:
-                self._audit_client = AuditClient(service_url=self.audit_service_url)
+                self._audit_client = AuditClient(
+                    config=AuditClientConfig(
+                        service_url=self.audit_service_url,
+                        signing_provider=resolve_signing_provider(),
+                    )
+                )
                 await self._audit_client.start()
             except (ConnectionError, TimeoutError, httpx.HTTPError, ValueError) as exc:
                 logger.warning("Audit client init failed (non-fatal): %s", exc)

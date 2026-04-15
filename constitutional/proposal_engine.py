@@ -31,6 +31,7 @@ else:
     JSONList: TypeAlias = list[Any]
 
 from enhanced_agent_bus.observability.structured_logging import get_logger
+from enhanced_agent_bus.signing_provider import resolve_signing_provider
 
 from .amendment_model import AmendmentProposal, AmendmentStatus
 from .diff_engine import ConstitutionalDiffEngine, SemanticDiff
@@ -135,6 +136,7 @@ except ImportError:
 
 logger = get_logger(__name__)
 if TYPE_CHECKING:
+
     class _ProposalBaseError(Exception):
         http_status_code: int
         error_code: str
@@ -224,6 +226,7 @@ class AmendmentProposalEngine:
         impact_scorer: ImpactScorer | None = None,
         maci_enforcer: MACIEnforcer | None = None,
         audit_client: AuditClient | None = None,
+        signing_provider: object | None = None,
         enable_maci: bool = True,
         enable_audit: bool = True,
     ):
@@ -245,6 +248,7 @@ class AmendmentProposalEngine:
         )
         self.maci_enforcer = maci_enforcer
         self.audit_client = audit_client
+        self.signing_provider = resolve_signing_provider(cast(Any, signing_provider))
         self.enable_maci = enable_maci
         self.enable_audit = enable_audit
         self._invariant_validator: Any | None = None
@@ -252,7 +256,7 @@ class AmendmentProposalEngine:
         # Initialize audit client if enabled
         if self.enable_audit and self.audit_client is None:
             try:
-                audit_config = AuditClientConfig()
+                audit_config = AuditClientConfig(signing_provider=self.signing_provider)
                 self.audit_client = AuditClient(config=audit_config)
             except _PROPOSAL_ENGINE_OPERATION_ERRORS as e:
                 logger.warning(

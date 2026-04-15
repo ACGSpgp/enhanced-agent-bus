@@ -25,6 +25,7 @@ from enhanced_agent_bus.constitutional.opa_updater import (
     PolicyUpdateStatus,
     PolicyValidationResult,
 )
+from enhanced_agent_bus.signing_provider import HsmSigningProvider
 
 # ---------------------------------------------------------------------------
 # Helpers / shared fixtures
@@ -291,6 +292,22 @@ class TestOPAPolicyUpdaterConnect:
             mock_audit.start.assert_called_once()
             assert updater._audit_client is mock_audit
             await updater._http_client.aclose()
+
+    async def test_connect_routes_signing_provider_to_audit_client(self):
+        mock_audit = AsyncMock()
+        mock_audit_cls = MagicMock(return_value=mock_audit)
+        updater = OPAPolicyUpdater()
+        provider = HsmSigningProvider(secret=b"opa-secret", key_id="opa-hsm")
+        with (
+            patch("enhanced_agent_bus.constitutional.opa_updater.OPAClient", None),
+            patch("enhanced_agent_bus.constitutional.opa_updater.AuditClient", mock_audit_cls),
+            patch("enhanced_agent_bus.constitutional.opa_updater.resolve_signing_provider", lambda: provider),
+        ):
+            await updater.connect()
+
+        _, kwargs = mock_audit_cls.call_args
+        assert kwargs["config"].signing_provider is provider
+        await updater._http_client.aclose()
 
     async def test_connect_audit_client_init_error(self):
         mock_audit = AsyncMock()

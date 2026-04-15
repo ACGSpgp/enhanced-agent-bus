@@ -581,6 +581,32 @@ class TestCheckSuperMajorityResolution:
         assert decision == "DENY"  # 2 <= 6/3 (2.0), so not resolved yet
 
 
+class TestAdaptiveQuorumResolution:
+    """Tests for adaptive quorum overrides."""
+
+    def test_check_quorum_resolution_with_required_approval_weight(self) -> None:
+        resolved, decision = VotingService._check_quorum_resolution(
+            2.0,
+            0.0,
+            3.0,
+            required_approval_weight=2.0,
+        )
+
+        assert resolved is True
+        assert decision == "APPROVE"
+
+    def test_check_quorum_resolution_denies_when_threshold_unreachable(self) -> None:
+        resolved, decision = VotingService._check_quorum_resolution(
+            1.0,
+            1.5,
+            3.0,
+            required_approval_weight=2.5,
+        )
+
+        assert resolved is True
+        assert decision == "DENY"
+
+
 # =============================================================================
 # Integration Tests for Helper Functions
 # =============================================================================

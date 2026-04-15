@@ -34,6 +34,7 @@ else:
         JSONDict: TypeAlias = dict[str, Any]
 
 from enhanced_agent_bus.observability.structured_logging import get_logger
+from enhanced_agent_bus.signing_provider import canonical_signing_payload
 
 try:
     import pybreaker as _pybreaker
@@ -78,6 +79,7 @@ class AuditClientConfig:
 
     # Queue settings
     queue_size: int = 1000
+    signing_provider: object | None = None
 
 
 @dataclass
@@ -128,6 +130,7 @@ class AuditClient:
             self.config = AuditClientConfig(service_url=service_url)
 
         self.service_url = self.config.service_url
+        self.signing_provider = self.config.signing_provider
         self.client = httpx.AsyncClient(
             timeout=self.config.timeout,
             limits=httpx.Limits(max_keepalive_connections=10, max_connections=20),
@@ -404,14 +407,27 @@ class AuditClient:
         """Serialize a validation result to a dictionary."""
         if hasattr(validation_result, "to_dict"):
             result = validation_result.to_dict()
-            return result if isinstance(result, dict) else {}
+            payload = result if isinstance(result, dict) else {}
+            return self._attach_signature(payload)
 
         from dataclasses import is_dataclass
 
         if is_dataclass(validation_result) and not isinstance(validation_result, type):
-            return asdict(validation_result)
+            return self._attach_signature(asdict(validation_result))
 
-        return validation_result if isinstance(validation_result, dict) else {}
+        payload = validation_result if isinstance(validation_result, dict) else {}
+        return self._attach_signature(payload)
+
+    def _attach_signature(self, payload: JSONDict) -> JSONDict:
+        if not self.signing_provider:
+            return payload
+
+        signable = canonical_signing_payload(payload)
+        signature = self.signing_provider.sign(signable).hex()
+        enriched = dict(payload)
+        enriched["signature"] = signature
+        enriched["signature_metadata"] = self.signing_provider.metadata()
+        return enriched
 
     async def get_stats(self) -> JSONDict:
         """Fetch statistics from the Audit Service."""

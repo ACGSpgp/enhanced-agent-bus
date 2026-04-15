@@ -68,6 +68,10 @@ class TestBusConfigurationDefaults:
         assert config.governance_core_mode == "legacy"
         assert config.governance_swarm_peer_validation_enabled is True
         assert config.governance_swarm_use_manifold is False
+        assert config.governance_swarm_danger_signals_enabled is False
+        assert config.governance_swarm_adaptive_quorum_enabled is False
+        assert config.governance_tee_enabled is False
+        assert config.governance_tee_mode == "local"
 
     def test_default_optional_dependencies(self):
         """Test default optional dependencies are None."""
@@ -137,10 +141,18 @@ class TestBusConfigurationCustomValues:
             governance_core_mode="shadow",
             governance_swarm_peer_validation_enabled=False,
             governance_swarm_use_manifold=True,
+            governance_swarm_danger_signals_enabled=True,
+            governance_swarm_adaptive_quorum_enabled=True,
+            governance_tee_enabled=True,
+            governance_tee_mode="sgx",
         )
         assert config.governance_core_mode == "shadow"
         assert config.governance_swarm_peer_validation_enabled is False
         assert config.governance_swarm_use_manifold is True
+        assert config.governance_swarm_danger_signals_enabled is True
+        assert config.governance_swarm_adaptive_quorum_enabled is True
+        assert config.governance_tee_enabled is True
+        assert config.governance_tee_mode == "sgx"
 
 
 class TestBusConfigurationPostInit:
@@ -200,6 +212,10 @@ class TestBusConfigurationFromEnvironment:
         "GOVERNANCE_CORE_MODE",
         "GOVERNANCE_SWARM_PEER_VALIDATION_ENABLED",
         "GOVERNANCE_SWARM_USE_MANIFOLD",
+        "GOVERNANCE_SWARM_DANGER_SIGNALS_ENABLED",
+        "GOVERNANCE_SWARM_ADAPTIVE_QUORUM_ENABLED",
+        "GOVERNANCE_TEE_ENABLED",
+        "GOVERNANCE_TEE_MODE",
         "MAX_QUEUE_SIZE",
         "MAX_MESSAGE_SIZE_BYTES",
         "QUEUE_FULL_BEHAVIOR",
@@ -320,12 +336,20 @@ class TestBusConfigurationFromEnvironment:
             "GOVERNANCE_CORE_MODE": "shadow",
             "GOVERNANCE_SWARM_PEER_VALIDATION_ENABLED": "false",
             "GOVERNANCE_SWARM_USE_MANIFOLD": "true",
+            "GOVERNANCE_SWARM_DANGER_SIGNALS_ENABLED": "true",
+            "GOVERNANCE_SWARM_ADAPTIVE_QUORUM_ENABLED": "true",
+            "GOVERNANCE_TEE_ENABLED": "true",
+            "GOVERNANCE_TEE_MODE": "sgx",
         }
         with patch.dict(os.environ, env_vars, clear=False):
             config = BusConfiguration.from_environment()
             assert config.governance_core_mode == "shadow"
             assert config.governance_swarm_peer_validation_enabled is False
             assert config.governance_swarm_use_manifold is True
+            assert config.governance_swarm_danger_signals_enabled is True
+            assert config.governance_swarm_adaptive_quorum_enabled is True
+            assert config.governance_tee_enabled is True
+            assert config.governance_tee_mode == "sgx"
 
     def test_from_environment_invalid_governance_core_mode_falls_back_to_legacy(self):
         """Test invalid governance core mode falls back to legacy."""
@@ -366,6 +390,9 @@ class TestBusConfigurationForTesting:
         assert config.governance_core_mode == "legacy"
         assert config.governance_swarm_peer_validation_enabled is True
         assert config.governance_swarm_use_manifold is False
+        assert config.governance_swarm_danger_signals_enabled is False
+        assert config.governance_swarm_adaptive_quorum_enabled is False
+        assert config.governance_tee_enabled is False
 
 
 class TestBusConfigurationForProduction:
@@ -400,6 +427,9 @@ class TestBusConfigurationForProduction:
         assert config.governance_core_mode == "legacy"
         assert config.governance_swarm_peer_validation_enabled is True
         assert config.governance_swarm_use_manifold is False
+        assert config.governance_swarm_danger_signals_enabled is False
+        assert config.governance_swarm_adaptive_quorum_enabled is False
+        assert config.governance_tee_enabled is False
 
 
 class TestBusConfigurationBuilderMethods:

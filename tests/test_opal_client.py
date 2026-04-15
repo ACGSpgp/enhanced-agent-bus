@@ -32,6 +32,7 @@ from enhanced_agent_bus.opal_client import (
     OPALPolicyClient,
     PolicyUpdateEvent,
 )
+from enhanced_agent_bus.signing_provider import HsmSigningProvider
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -213,6 +214,22 @@ class TestConnectDisconnect:
 
             await client.disconnect()
             mock_audit_instance.stop.assert_awaited_once()
+
+    @patch("enhanced_agent_bus.opal_client.OPAClient", None)
+    async def test_connect_routes_signing_provider_to_audit_client(self):
+        mock_audit_cls = MagicMock()
+        mock_audit_instance = AsyncMock()
+        mock_audit_cls.return_value = mock_audit_instance
+        provider = HsmSigningProvider(secret=b"opal-secret", key_id="opal-hsm")
+
+        with patch("enhanced_agent_bus.opal_client.AuditClient", mock_audit_cls):
+            with patch("enhanced_agent_bus.opal_client.resolve_signing_provider", lambda: provider):
+                client = _make_client(opal_enabled=False)
+                await client.connect()
+
+        _, kwargs = mock_audit_cls.call_args
+        assert kwargs["config"].signing_provider is provider
+        await client.disconnect()
 
     @patch("enhanced_agent_bus.opal_client.OPAClient", None)
     async def test_connect_audit_failure_nonfatal(self):

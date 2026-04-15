@@ -14,6 +14,7 @@ from enhanced_agent_bus.constitutional.proposal_engine import (
     ProposalResponse,
     ProposalValidationError,
 )
+from enhanced_agent_bus.signing_provider import HsmSigningProvider
 
 # ---------------------------------------------------------------------------
 # ProposalRequest model
@@ -79,6 +80,37 @@ class TestProposalValidationError:
         err = ProposalValidationError("test error")
         assert isinstance(err, Exception)
         assert "test error" in str(err)
+
+
+def test_engine_routes_signing_provider_into_audit_client(monkeypatch):
+    storage = _mock_storage()
+    provider = HsmSigningProvider(secret=b"proposal-secret", key_id="proposal-hsm")
+    captured: dict[str, object] = {}
+
+    class DummyAuditClientConfig:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            captured["signing_provider"] = kwargs.get("signing_provider")
+
+    class DummyAuditClient:
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            captured["config"] = kwargs.get("config")
+
+    monkeypatch.setattr(
+        "enhanced_agent_bus.constitutional.proposal_engine.AuditClientConfig",
+        DummyAuditClientConfig,
+    )
+    monkeypatch.setattr(
+        "enhanced_agent_bus.constitutional.proposal_engine.AuditClient",
+        DummyAuditClient,
+    )
+
+    AmendmentProposalEngine(
+        storage=storage,
+        enable_audit=True,
+        signing_provider=provider,
+    )
+
+    assert captured["signing_provider"] is provider
 
 
 # ---------------------------------------------------------------------------

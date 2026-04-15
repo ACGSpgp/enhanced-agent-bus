@@ -14,6 +14,7 @@ from typing import Any, Literal, Protocol, TypeAlias, cast
 
 JSONDict: TypeAlias = dict[str, Any]
 
+from enhanced_agent_bus.governance.danger_signal import DangerSignalAnalyzer
 from enhanced_agent_bus.observability.structured_logging import get_logger
 
 from .validators import validate_constitutional_hash
@@ -32,6 +33,7 @@ SWARM_IMPORT_ERROR: Exception | None = None
 try:
     from acgs_lite import Constitution as _Constitution
     from acgs_lite import ConstitutionalViolationError as _ConstitutionalViolationError
+
     _constitutional_swarm: Any = import_module("constitutional_swarm")
 
     _AgentDNA = _constitutional_swarm.AgentDNA
@@ -71,6 +73,7 @@ class GovernanceInput:
     autonomy_tier: str | None
     requires_independent_validator: bool
     security_scan_result: str | None
+    impact_score: float | None = None
     validator_ids: tuple[str, ...] = ()
 
 
@@ -86,6 +89,7 @@ class PeerValidationDecision:
     proof_constitutional_hash: str | None = None
     manifold_summary: JSONDict | None = None
     trust_score: float | None = None
+    adaptive_quorum: JSONDict | None = None
 
     def to_metadata(self) -> JSONDict:
         metadata: JSONDict = {
@@ -101,6 +105,8 @@ class PeerValidationDecision:
         }
         if self.manifold_summary is not None:
             metadata["manifold_summary"] = self.manifold_summary
+        if self.adaptive_quorum is not None:
+            metadata["adaptive_quorum"] = self.adaptive_quorum
         return metadata
 
 
@@ -153,6 +159,7 @@ class GovernanceReceipt:
     trust_score: float | None = None
     swarm_constitutional_hash: str | None = None
     created_at: float = field(default_factory=time.time)
+    attestation: JSONDict | None = None
 
     def to_metadata(self) -> JSONDict:
         metadata: JSONDict = {
@@ -175,6 +182,8 @@ class GovernanceReceipt:
             metadata["swarm_hash_aligned"] = (
                 self.swarm_constitutional_hash == self.constitutional_hash
             )
+        if self.attestation is not None:
+            metadata["attestation"] = dict(self.attestation)
         return metadata
 
 
@@ -201,8 +210,13 @@ class GovernanceCore(Protocol):
 
 
 class LegacyGovernanceCore:
-    def __init__(self, expected_constitutional_hash: str) -> None:
+    def __init__(
+        self,
+        expected_constitutional_hash: str,
+        attestation_provider: Any | None = None,
+    ) -> None:
         self._expected_constitutional_hash = expected_constitutional_hash
+        self._attestation_provider = attestation_provider
 
     def is_available(self) -> bool:
         return True
@@ -244,7 +258,7 @@ class LegacyGovernanceCore:
         governance_input: GovernanceInput,
         decision: GovernanceDecision,
     ) -> GovernanceReceipt:
-        return GovernanceReceipt(
+        receipt = GovernanceReceipt(
             receipt_id=f"legacy:{governance_input.message_id}",
             engine_mode="legacy",
             message_id=governance_input.message_id,
@@ -258,6 +272,7 @@ class LegacyGovernanceCore:
             peer_validation=dict(decision.peer_votes),
             trust_score=decision.trust_score,
         )
+        return _attach_receipt_attestation(receipt, self._attestation_provider)
 
 
 class SwarmGovernanceCore:
@@ -267,11 +282,18 @@ class SwarmGovernanceCore:
         expected_constitutional_hash: str,
         enable_peer_validation: bool = True,
         use_manifold: bool = False,
+        enable_danger_signals: bool = False,
+        enable_adaptive_quorum: bool = False,
+        attestation_provider: Any | None = None,
         constitution: Constitution | None = None,
     ) -> None:
         self._expected_constitutional_hash = expected_constitutional_hash
         self._enable_peer_validation = enable_peer_validation
         self._use_manifold = use_manifold
+        self._enable_danger_signals = enable_danger_signals
+        self._enable_adaptive_quorum = enable_adaptive_quorum
+        self._attestation_provider = attestation_provider
+        self._danger_signal_analyzer = DangerSignalAnalyzer()
         self._constitution, self._constitution_error = self._resolve_constitution(constitution)
         self._dna = (
             AgentDNA(
@@ -424,17 +446,18 @@ class SwarmGovernanceCore:
 
         assert self._constitution is not None
         assert ConstitutionalMesh is not None
+        adaptive_quorum = self._resolve_required_quorum(governance_input, len(validator_ids))
 
         mesh = ConstitutionalMesh(
             self._constitution,
             peers_per_validation=len(validator_ids),
-            quorum=len(validator_ids),
+            quorum=adaptive_quorum.required_votes,
             seed=13,
             use_manifold=self._use_manifold,
         )
-        mesh.register_agent(governance_input.producer_id, domain=governance_input.tenant_id)
+        _register_mesh_signer(mesh, governance_input.producer_id, governance_input.tenant_id)
         for validator_id in validator_ids:
-            mesh.register_agent(validator_id, domain=governance_input.tenant_id)
+            _register_mesh_signer(mesh, validator_id, governance_input.tenant_id)
 
         try:
             result = mesh.full_validation(
@@ -470,6 +493,11 @@ class SwarmGovernanceCore:
             proof_constitutional_hash=result.proof.constitutional_hash if result.proof else None,
             manifold_summary=mesh.manifold_summary(),
             trust_score=trust_score,
+            adaptive_quorum=(
+                adaptive_quorum.to_metadata()
+                if self._enable_danger_signals or self._enable_adaptive_quorum
+                else None
+            ),
         )
 
     async def score_governance(
@@ -487,7 +515,7 @@ class SwarmGovernanceCore:
         governance_input: GovernanceInput,
         decision: GovernanceDecision,
     ) -> GovernanceReceipt:
-        return GovernanceReceipt(
+        receipt = GovernanceReceipt(
             receipt_id=f"swarm:{governance_input.message_id}",
             engine_mode="swarm",
             message_id=governance_input.message_id,
@@ -502,12 +530,81 @@ class SwarmGovernanceCore:
             trust_score=decision.trust_score,
             swarm_constitutional_hash=decision.swarm_constitutional_hash,
         )
+        return _attach_receipt_attestation(receipt, self._attestation_provider)
 
     @property
     def _swarm_hash(self) -> str | None:
         if self._constitution is None:
             return None
         return self._constitution.hash
+
+    def _resolve_required_quorum(self, governance_input: GovernanceInput, validator_count: int):
+        default = self._danger_signal_analyzer.analyze(
+            content=governance_input.content,
+            action_type=governance_input.action_type,
+            impact_score=governance_input.impact_score,
+            requires_independent_validator=governance_input.requires_independent_validator,
+            security_scan_result=governance_input.security_scan_result,
+            validator_count=validator_count,
+        )
+        if not self._enable_danger_signals and not self._enable_adaptive_quorum:
+            return default.__class__(
+                mode=default.mode,
+                risk_score=default.risk_score,
+                required_votes=validator_count,
+                total_validators=validator_count,
+                signals=(),
+            )
+        if not self._enable_adaptive_quorum:
+            return default.__class__(
+                mode=default.mode,
+                risk_score=default.risk_score,
+                required_votes=validator_count,
+                total_validators=validator_count,
+                signals=default.signals,
+            )
+        return default
+
+
+def _attach_receipt_attestation(
+    receipt: GovernanceReceipt,
+    attestation_provider: Any | None,
+) -> GovernanceReceipt:
+    if attestation_provider is None:
+        return receipt
+
+    attestation = attestation_provider.attest(receipt.to_metadata())
+    return GovernanceReceipt(
+        receipt_id=receipt.receipt_id,
+        engine_mode=receipt.engine_mode,
+        message_id=receipt.message_id,
+        producer_id=receipt.producer_id,
+        content_hash=receipt.content_hash,
+        constitutional_hash=receipt.constitutional_hash,
+        allowed=receipt.allowed,
+        blocking_stage=receipt.blocking_stage,
+        reasons=receipt.reasons,
+        rule_hits=receipt.rule_hits,
+        peer_validation=receipt.peer_validation,
+        trust_score=receipt.trust_score,
+        swarm_constitutional_hash=receipt.swarm_constitutional_hash,
+        created_at=receipt.created_at,
+        attestation=attestation,
+    )
+
+
+def _register_mesh_signer(mesh: Any, agent_id: str, domain: str) -> None:
+    register_local_signer = getattr(mesh, "register_local_signer", None)
+    if callable(register_local_signer):
+        register_local_signer(agent_id, domain=domain)
+        return
+
+    register_agent = getattr(mesh, "register_agent", None)
+    if callable(register_agent):
+        register_agent(agent_id, domain=domain)
+        return
+
+    raise AttributeError("ConstitutionalMesh has no compatible agent registration API")
 
 
 def _dedupe_strings(values: Iterable[str]) -> tuple[str, ...]:

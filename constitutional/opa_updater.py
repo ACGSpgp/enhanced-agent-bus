@@ -34,6 +34,7 @@ else:
     JSONDict: TypeAlias = dict[str, Any]
 
 from enhanced_agent_bus.observability.structured_logging import get_logger
+from enhanced_agent_bus.signing_provider import resolve_signing_provider
 
 try:
     import aiofiles
@@ -44,12 +45,24 @@ except ImportError:
 
 try:
     from ..audit_client import AuditClient as _AuditClient
-    from ..opa_client import OPAClient as _OPAClient
+    from ..audit_client import AuditClientConfig as _AuditClientConfig
 except ImportError:
-    AuditClient: Any | None = None
-    OPAClient: Any | None = None
+    AuditClient = None  # type: ignore[assignment]
+
+    class AuditClientConfig:  # type: ignore[no-redef]
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            self.service_url = kwargs.get("service_url", "http://localhost:8001")
+            self.signing_provider = kwargs.get("signing_provider")
+
 else:
     AuditClient = _AuditClient
+    AuditClientConfig = _AuditClientConfig
+
+try:
+    from ..opa_client import OPAClient as _OPAClient
+except ImportError:
+    OPAClient: Any | None = None
+else:
     OPAClient = _OPAClient
 
 logger = get_logger(__name__)
@@ -196,9 +209,14 @@ class OPAPolicyUpdater:
                 self._opa_client = None
 
         # Audit client for event logging
-        if AuditClient is not None:
+        if AuditClient is not None and AuditClientConfig is not None:
             try:
-                self._audit_client = AuditClient(service_url=self.audit_service_url)
+                self._audit_client = AuditClient(
+                    config=AuditClientConfig(
+                        service_url=self.audit_service_url,
+                        signing_provider=resolve_signing_provider(),
+                    )
+                )
                 await cast(Any, self._audit_client).start()
                 logger.info("Audit client initialized successfully")
             except (RuntimeError, ValueError, TypeError) as e:

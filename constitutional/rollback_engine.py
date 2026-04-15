@@ -33,6 +33,7 @@ except ImportError:
     CONSTITUTIONAL_HASH = "standalone"
 from enhanced_agent_bus._compat.errors import ACGSBaseError
 from enhanced_agent_bus.observability.structured_logging import get_logger
+from enhanced_agent_bus.signing_provider import resolve_signing_provider
 
 aioredis: Any | None = None
 try:
@@ -65,12 +66,24 @@ from .storage import ConstitutionalStorageService
 
 try:
     from ..audit_client import AuditClient as _AuditClient
-    from ..opa_client import OPAClient as _OPAClient
+    from ..audit_client import AuditClientConfig as _AuditClientConfig
 except ImportError:
-    AuditClient: Any | None = None
-    OPAClient: Any | None = None
+    AuditClient = None  # type: ignore[assignment]
+
+    class AuditClientConfig:  # type: ignore[no-redef]
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            self.service_url = kwargs.get("service_url", "http://localhost:8001")
+            self.signing_provider = kwargs.get("signing_provider")
+
 else:
     AuditClient = _AuditClient
+    AuditClientConfig = _AuditClientConfig
+
+try:
+    from ..opa_client import OPAClient as _OPAClient
+except ImportError:
+    OPAClient: Any | None = None
+else:
     OPAClient = _OPAClient
 
 try:
@@ -412,7 +425,9 @@ class RollbackSagaActivities:
             )
             notifications_sent.append("slack")
         except (RuntimeError, ValueError, TypeError) as e:
-            logger.warning("[%s] Failed to send Slack notification: %s", CONSTITUTIONAL_HASH, str(e))
+            logger.warning(
+                "[%s] Failed to send Slack notification: %s", CONSTITUTIONAL_HASH, str(e)
+            )
 
         if severity == "critical":
             try:
@@ -511,16 +526,25 @@ class RollbackSagaActivities:
                 self._opa_client = OPAClient(opa_url=self.opa_url)
                 await cast(Any, self._opa_client).initialize()
             except (RuntimeError, ValueError, TypeError) as e:
-                logger.warning("[%s] Failed to initialize OPA client: %s", CONSTITUTIONAL_HASH, str(e))
+                logger.warning(
+                    "[%s] Failed to initialize OPA client: %s", CONSTITUTIONAL_HASH, str(e)
+                )
                 self._opa_client = None
 
         # Audit client
-        if AuditClient is not None:
+        if AuditClient is not None and AuditClientConfig is not None:
             try:
-                self._audit_client = AuditClient(service_url=self.audit_service_url)
+                self._audit_client = AuditClient(
+                    config=AuditClientConfig(
+                        service_url=self.audit_service_url,
+                        signing_provider=resolve_signing_provider(),
+                    )
+                )
                 await cast(Any, self._audit_client).start()
             except (RuntimeError, ValueError, TypeError) as e:
-                logger.warning("[%s] Failed to initialize audit client: %s", CONSTITUTIONAL_HASH, str(e))
+                logger.warning(
+                    "[%s] Failed to initialize audit client: %s", CONSTITUTIONAL_HASH, str(e)
+                )
                 self._audit_client = None
 
     async def close(self) -> None:

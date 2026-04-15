@@ -9,6 +9,7 @@ distributed multi-signature voting process.
 from __future__ import annotations
 
 import json
+import math
 from hashlib import sha256
 
 try:
@@ -16,6 +17,7 @@ try:
 except ImportError:
     JSONDict = dict  # type: ignore[misc,assignment]
 
+from enhanced_agent_bus.governance.danger_signal import DangerSignalAnalyzer
 from enhanced_agent_bus.observability.structured_logging import get_logger
 
 try:
@@ -83,11 +85,16 @@ class ConstitutionalCouncilService:
         proposal_engine: object,
         council_members: dict[str, str],  # member_id -> Ed25519 public_key_hex
         min_quorum: float = 0.66,  # 2/3 supermajority by default
+        enable_adaptive_quorum: bool = False,
+        enable_danger_signals: bool = False,
     ):
         self.voting_service = voting_service
         self.proposal_engine = proposal_engine
         self.council_members = council_members
         self.min_quorum = min_quorum
+        self.enable_adaptive_quorum = enable_adaptive_quorum
+        self.enable_danger_signals = enable_danger_signals
+        self._danger_signal_analyzer = DangerSignalAnalyzer()
 
         # ML-DSA-65 keys: member_id -> ML-DSA-65 public_key_hex (populated via register_ml_dsa_key)
         self.council_pqc_keys: dict[str, str] = {}
@@ -158,12 +165,36 @@ class ConstitutionalCouncilService:
         if not message:
             raise RuntimeError("AgentMessage model not available")
 
+        adaptive_quorum = None
+        if self.enable_adaptive_quorum or self.enable_danger_signals:
+            validator_count = len(self.council_members)
+            decision = self._danger_signal_analyzer.analyze(
+                content=f"{request.justification} {json.dumps(request.proposed_changes, sort_keys=True)}",
+                action_type="governance_request",
+                impact_score=None,
+                requires_independent_validator=True,
+                security_scan_result="passed",
+                validator_count=validator_count,
+            )
+            required_votes = (
+                decision.required_votes
+                if self.enable_adaptive_quorum
+                else max(1, math.ceil(validator_count * self.min_quorum))
+            )
+            adaptive_quorum = {
+                **decision.to_metadata(),
+                "required_votes": required_votes,
+                "baseline_mode": "constitutional_council_min_quorum",
+                "baseline_min_quorum": self.min_quorum,
+            }
+
         # 3. Start election with Council members
         election_id = await self.voting_service.create_election(
             message=message,
             participants=list(self.council_members.keys()),
             timeout=86400 * 3,  # 3 days default for constitutional changes
             participant_weights={m: 1.0 for m in self.council_members},
+            adaptive_quorum=adaptive_quorum,
         )
 
         self._active_elections[getattr(proposal, "id", proposal.proposal_id)] = election_id  # type: ignore[attr-defined]

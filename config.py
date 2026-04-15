@@ -34,6 +34,7 @@ def _load_litellm_cache_class() -> Any:
     caching_module = importlib.import_module("litellm.caching")
     return cast(Any, caching_module.Cache)
 
+
 # Default Redis URL with fallback
 try:
     from enhanced_agent_bus._compat.redis_config import get_redis_url
@@ -121,6 +122,10 @@ class BusConfiguration:
     governance_core_mode: str = "legacy"
     governance_swarm_peer_validation_enabled: bool = True
     governance_swarm_use_manifold: bool = False
+    governance_swarm_danger_signals_enabled: bool = False
+    governance_swarm_adaptive_quorum_enabled: bool = False
+    governance_tee_enabled: bool = False
+    governance_tee_mode: str = "local"
 
     # DTMC trajectory risk scoring (Pro2Guard-inspired)
     # Feature flag -- safe default off; zero behaviour change until activated.
@@ -261,6 +266,16 @@ class BusConfiguration:
             governance_swarm_use_manifold=cls._parse_bool(
                 os.getenv("GOVERNANCE_SWARM_USE_MANIFOLD", "false")
             ),
+            governance_swarm_danger_signals_enabled=cls._parse_bool(
+                os.getenv("GOVERNANCE_SWARM_DANGER_SIGNALS_ENABLED", "false")
+            ),
+            governance_swarm_adaptive_quorum_enabled=cls._parse_bool(
+                os.getenv("GOVERNANCE_SWARM_ADAPTIVE_QUORUM_ENABLED", "false")
+            ),
+            governance_tee_enabled=cls._parse_bool(
+                os.getenv("GOVERNANCE_TEE_ENABLED", "false")
+            ),
+            governance_tee_mode=os.getenv("GOVERNANCE_TEE_MODE", "local"),
             # Queue backpressure settings
             max_queue_size=cls._parse_int(os.getenv("MAX_QUEUE_SIZE"), 10_000),
             max_message_size_bytes=cls._parse_int(os.getenv("MAX_MESSAGE_SIZE_BYTES"), 1_048_576),
@@ -331,6 +346,10 @@ class BusConfiguration:
             governance_core_mode="legacy",
             governance_swarm_peer_validation_enabled=True,
             governance_swarm_use_manifold=False,
+            governance_swarm_danger_signals_enabled=False,
+            governance_swarm_adaptive_quorum_enabled=False,
+            governance_tee_enabled=False,
+            governance_tee_mode="local",
             # Relaxed backpressure for testing
             max_queue_size=100_000,
         )
@@ -361,6 +380,10 @@ class BusConfiguration:
             governance_core_mode="legacy",
             governance_swarm_peer_validation_enabled=True,
             governance_swarm_use_manifold=False,
+            governance_swarm_danger_signals_enabled=False,
+            governance_swarm_adaptive_quorum_enabled=False,
+            governance_tee_enabled=False,
+            governance_tee_mode="local",
             # Strict backpressure for production
             max_queue_size=10_000,
             max_message_size_bytes=1_048_576,
@@ -451,6 +474,14 @@ class BusConfiguration:
                 self.governance_swarm_peer_validation_enabled
             ),
             "governance_swarm_use_manifold": self.governance_swarm_use_manifold,
+            "governance_swarm_danger_signals_enabled": (
+                self.governance_swarm_danger_signals_enabled
+            ),
+            "governance_swarm_adaptive_quorum_enabled": (
+                self.governance_swarm_adaptive_quorum_enabled
+            ),
+            "governance_tee_enabled": self.governance_tee_enabled,
+            "governance_tee_mode": self.governance_tee_mode,
             # Queue backpressure settings
             "max_queue_size": self.max_queue_size,
             "max_message_size_bytes": self.max_message_size_bytes,

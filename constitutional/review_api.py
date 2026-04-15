@@ -28,6 +28,7 @@ else:
     JSONDict: TypeAlias = dict[str, Any]
 
 from enhanced_agent_bus.observability.structured_logging import get_logger
+from enhanced_agent_bus.signing_provider import resolve_signing_provider
 
 from .amendment_model import AmendmentProposal, AmendmentStatus
 from .diff_engine import ConstitutionalDiffEngine, SemanticDiff
@@ -110,14 +111,13 @@ except ImportError:
         def __init__(self, *args: object, **kwargs: object) -> None:
             pass
 
-        async def log_event(
-            self, *args: object, **kwargs: object
-        ) -> None:
+        async def log_event(self, *args: object, **kwargs: object) -> None:
             pass
 
 
 logger = get_logger(__name__)
 if TYPE_CHECKING:
+
     class _PydanticBaseModel:
         def __init__(self, **data: object) -> None: ...
 
@@ -214,7 +214,14 @@ async def _authorize_judicial_action(
 async def _create_review_dependencies(*, include_hitl: bool = False) -> _ReviewDependencies:
     storage = ConstitutionalStorageService()
     await storage.connect()
-    audit_client = cast(Any, AuditClient(config=AuditClientConfig()))
+    audit_client = cast(
+        Any,
+        AuditClient(
+            config=AuditClientConfig(
+                signing_provider=resolve_signing_provider(),
+            )
+        ),
+    )
     hitl = cast(Any, ConstitutionalHITLIntegration(storage=storage)) if include_hitl else None
     return _ReviewDependencies(storage=storage, audit_client=audit_client, hitl=hitl)
 
@@ -1078,7 +1085,9 @@ async def rollback_to_version(
 # Health check for constitutional review API
 @_typed_route(
     "get",
-    "/health", summary="Health check", description="Health check for constitutional review API"
+    "/health",
+    summary="Health check",
+    description="Health check for constitutional review API",
 )
 async def health_check() -> JSONDict:
     """

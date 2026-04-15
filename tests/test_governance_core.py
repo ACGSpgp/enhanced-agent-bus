@@ -21,6 +21,7 @@ from enhanced_agent_bus.governance_core import (
 )
 from enhanced_agent_bus.message_processor import MessageProcessor
 from enhanced_agent_bus.models import CONSTITUTIONAL_HASH, AgentMessage, MessageType
+from enhanced_agent_bus.tee_attestation import LocalTeeAttestationProvider
 from enhanced_agent_bus.validators import ValidationResult
 
 _skip_no_swarm = pytest.mark.skipif(
@@ -764,3 +765,73 @@ async def test_message_processor_counts_governance_core_rejections_as_failures()
     assert result.is_valid is False
     assert processor.failed_count == 1
     assert processor.get_metrics()["failed_count"] == 1
+
+
+@_skip_no_swarm
+@pytest.mark.asyncio
+async def test_swarm_peer_validation_exposes_adaptive_quorum_when_enabled() -> None:
+    core = SwarmGovernanceCore(
+        expected_constitutional_hash=CONSTITUTIONAL_HASH,
+        constitution=_active_constitution(),
+        enable_danger_signals=True,
+        enable_adaptive_quorum=True,
+    )
+    governance_input = GovernanceInput(
+        tenant_id="tenant-1",
+        trace_id="trace-1",
+        message_id="message-1",
+        producer_id="producer",
+        producer_role=None,
+        action_type="governance_request",
+        content="critical patient transfer override requires urgent approval",
+        content_hash="abcd1234",
+        constitutional_hash=CONSTITUTIONAL_HASH,
+        autonomy_tier=None,
+        requires_independent_validator=True,
+        security_scan_result="passed",
+        impact_score=0.92,
+        validator_ids=("validator-a", "validator-b", "validator-c"),
+    )
+
+    peer_result = await core.validate_peer(governance_input)
+
+    assert peer_result is not None
+    metadata = peer_result.to_metadata()
+    assert metadata["adaptive_quorum"]["required_votes"] == 3
+    assert metadata["adaptive_quorum"]["mode"] == "unanimous"
+    assert metadata["adaptive_quorum"]["signals"]
+
+
+@_skip_no_swarm
+@pytest.mark.asyncio
+async def test_swarm_receipt_attaches_local_tee_attestation() -> None:
+    core = SwarmGovernanceCore(
+        expected_constitutional_hash=CONSTITUTIONAL_HASH,
+        constitution=_active_constitution(),
+        attestation_provider=LocalTeeAttestationProvider(),
+    )
+    governance_input = GovernanceInput(
+        tenant_id="tenant-1",
+        trace_id="trace-2",
+        message_id="message-2",
+        producer_id="producer",
+        producer_role=None,
+        action_type="command",
+        content="safe collaborative planning update",
+        content_hash="efgh5678",
+        constitutional_hash=CONSTITUTIONAL_HASH,
+        autonomy_tier=None,
+        requires_independent_validator=False,
+        security_scan_result="passed",
+    )
+    decision = GovernanceDecision(
+        allowed=True,
+        blocking_stage=None,
+        constitutional_hash=CONSTITUTIONAL_HASH,
+        engine_mode="swarm",
+    )
+
+    receipt = core.build_receipt(governance_input, decision).to_metadata()
+
+    assert receipt["attestation"]["provider"] == "local-tee"
+    assert receipt["attestation"]["measurement"]
