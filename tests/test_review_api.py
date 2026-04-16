@@ -51,6 +51,10 @@ _MISSING = object()
 
 @contextmanager
 def _review_api_patch(name: str, value=_MISSING):
+    # WARNING: patches via list_amendments.__globals__ (module namespace captured at
+    # import time). Do NOT use in tests that import review_api_module fresh inside the
+    # test body or after a reload — use unittest.mock.patch with the full dotted module
+    # path (e.g. "enhanced_agent_bus.constitutional.review_api.<name>") instead.
     globals_dict = list_amendments.__globals__
     had_original = name in globals_dict
     original = globals_dict.get(name)
