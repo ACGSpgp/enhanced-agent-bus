@@ -83,7 +83,7 @@ class TestDeliberationWorkflowOptimized:
         mock_client.record = record
 
         with patch(
-            "enhanced_agent_bus.audit_client.AuditClient",
+            "enhanced_agent_bus.deliberation_layer.workflows.deliberation_workflow.AuditClient",
             return_value=mock_client,
         ) as audit_client_cls:
             audit_hash = await activities.record_audit_trail(
@@ -92,7 +92,8 @@ class TestDeliberationWorkflowOptimized:
             )
 
         assert audit_hash == "audit-hash-1234"
-        audit_client_cls.assert_called_once_with()
+        audit_client_cls.assert_called_once()
+        assert audit_client_cls.call_args.kwargs["config"] is not None
         record.assert_awaited_once()
 
     def test_workflow_determination_logic(self):
