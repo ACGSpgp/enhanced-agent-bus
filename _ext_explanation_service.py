@@ -39,6 +39,7 @@ except ImportError:
     def _reset_explanation_service() -> None:
         return None
 
+
 CounterfactualEngine: type[Any] = _CounterfactualEngine
 ExplanationService: type[Any] = _ExplanationService
 get_explanation_service: Callable[[], Any] = _get_explanation_service

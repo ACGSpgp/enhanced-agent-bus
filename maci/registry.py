@@ -117,7 +117,9 @@ class MACIAgentRecord:
         Returns:
             True if agent's privilege level >= required role's level
         """
-        return bool(int(ROLE_HIERARCHY.get(self.role, 0)) >= int(ROLE_HIERARCHY.get(required_role, 0)))
+        return bool(
+            int(ROLE_HIERARCHY.get(self.role, 0)) >= int(ROLE_HIERARCHY.get(required_role, 0))
+        )
 
     def to_audit_dict(self) -> JSONDict:
         """Convert to dictionary for audit logging with session context.

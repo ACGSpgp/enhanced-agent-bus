@@ -74,9 +74,7 @@ else:
             v = d.get(key, default or {})
             return v if isinstance(v, dict) else (default or {})
 
-        def get_list(
-            d: dict[str, Any], key: str, default: list[Any] | None = None
-        ) -> list[Any]:
+        def get_list(d: dict[str, Any], key: str, default: list[Any] | None = None) -> list[Any]:
             v = d.get(key, default or [])
             return v if isinstance(v, list) else (default or [])
 

@@ -432,9 +432,7 @@ class MeteringHooks:
 
         self._queue.enqueue_nowait(
             tenant_id=tenant_id or "default",
-            operation=_get_metering_operation("POLICY_EVALUATION")
-            if METERING_AVAILABLE
-            else None,
+            operation=_get_metering_operation("POLICY_EVALUATION") if METERING_AVAILABLE else None,
             tier=tier,
             agent_id=agent_id,
             latency_ms=latency_ms,

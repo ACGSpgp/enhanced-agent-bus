@@ -257,9 +257,7 @@ async def test_poll_until_idle_returns_events() -> None:
 @pytest.mark.asyncio
 async def test_poll_until_idle_raises_on_timeout() -> None:
     client = _stub_client(session_status="running")
-    executor = ManagedAgentExecutor(
-        client=client, poll_timeout=0, poll_interval=0.0
-    )
+    executor = ManagedAgentExecutor(client=client, poll_timeout=0, poll_interval=0.0)
 
     with pytest.raises(TimeoutError):
         await executor._poll_until_idle("s1", timeout=0)

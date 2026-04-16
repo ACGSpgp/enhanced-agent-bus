@@ -317,20 +317,24 @@ class ToolDefinition:
         return {
             "name": self.name,
             "description": self.description,
-            "parameters": sanitize_tool_input_schema({
-                "type": "object",
-                "properties": properties,
-                "required": required,
-            }),
+            "parameters": sanitize_tool_input_schema(
+                {
+                    "type": "object",
+                    "properties": properties,
+                    "required": required,
+                }
+            ),
         }
 
     def to_anthropic_schema(self) -> JSONDict:
         """Generate Anthropic-compatible tool schema."""
-        input_schema = sanitize_tool_input_schema({
-            "type": "object",
-            "properties": {},
-            "required": [],
-        })
+        input_schema = sanitize_tool_input_schema(
+            {
+                "type": "object",
+                "properties": {},
+                "required": [],
+            }
+        )
 
         for param in self.parameters:
             properties = cast(JSONDict, input_schema["properties"])

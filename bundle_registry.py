@@ -1027,9 +1027,7 @@ class BundleDistributionService:
                             signing_provider=self.signing_provider,
                         )
                         replica_result["signature"] = replica_signature
-                    results["replicas"].append(
-                        replica_result
-                    )
+                    results["replicas"].append(replica_result)
                 except Exception as e:
                     results["replicas"].append(
                         {"registry": fallback.host, "status": "failed", "error": str(e)}

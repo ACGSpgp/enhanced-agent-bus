@@ -162,7 +162,9 @@ class RedisAgentRegistry:
                 socket_connect_timeout=self._socket_connect_timeout,
                 decode_responses=True,
             )
-            self._redis = cast(_RedisRegistryClientProtocol, redis.Redis(connection_pool=self._pool))
+            self._redis = cast(
+                _RedisRegistryClientProtocol, redis.Redis(connection_pool=self._pool)
+            )
         return self._redis
 
     async def register(

@@ -45,9 +45,7 @@ detect_prompt_injection = cast(
     _load_attr(".security_helpers", "detect_prompt_injection"),
 )
 TenantValidator: Any = _load_attr(".security.tenant_validator", "TenantValidator")
-RuntimeSafetyGuardrails: Any = _load_attr(
-    ".runtime_safety_guardrails", "RuntimeSafetyGuardrails"
-)
+RuntimeSafetyGuardrails: Any = _load_attr(".runtime_safety_guardrails", "RuntimeSafetyGuardrails")
 RuntimeSafetyGuardrailsConfig: Any = _load_attr(
     ".runtime_safety_guardrails", "RuntimeSafetyGuardrailsConfig"
 )

@@ -958,7 +958,9 @@ class TestVotingServiceRedisPath:
 
     async def test_ensure_store_initialized_no_getter(self):
         """When get_election_store is None."""
-        with patch("enhanced_agent_bus.deliberation_layer.voting_service._get_election_store", None):
+        with patch(
+            "enhanced_agent_bus.deliberation_layer.voting_service._get_election_store", None
+        ):
             svc = VotingService(force_in_memory=False)
             svc._store_initialized = False
             result = await svc._ensure_store_initialized()

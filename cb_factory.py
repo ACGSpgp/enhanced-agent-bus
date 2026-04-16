@@ -35,6 +35,8 @@ logger = get_logger(__name__)
 
 class _HealthClientProtocol(Protocol):
     async def health_check(self) -> "JSONDict": ...
+
+
 # =============================================================================
 # Singleton Instances
 # =============================================================================

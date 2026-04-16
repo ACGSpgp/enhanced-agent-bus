@@ -92,7 +92,9 @@ class GovernanceCoordinator:
             autonomy_tier=get_enum_value(msg.autonomy_tier) if msg.autonomy_tier else None,
             requires_independent_validator=requires_independent_validator,
             security_scan_result="passed",
-            impact_score=float(msg.impact_score) if isinstance(msg.impact_score, (int, float)) else None,
+            impact_score=float(msg.impact_score)
+            if isinstance(msg.impact_score, (int, float))
+            else None,
             validator_ids=tuple(dict.fromkeys(validator_ids)),
         )
 

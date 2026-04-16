@@ -88,9 +88,7 @@ class ManagedAgentExecutor:
         events = await self._poll_until_idle(session.session_id)
         return self._events_to_message(events, message)
 
-    async def _get_or_create_session(
-        self, agent_id: str, task: str
-    ) -> ManagedAgentSession:
+    async def _get_or_create_session(self, agent_id: str, task: str) -> ManagedAgentSession:
         """Return the active session for *agent_id*, creating one if needed."""
         existing = self._session_registry.get(agent_id)
         if existing is not None and existing.status not in ("terminated", "error"):
@@ -190,9 +188,7 @@ class ManagedAgentExecutor:
                 # Update registry with the terminal status
                 for key, sess in self._session_registry.items():
                     if sess.session_id == session_id:
-                        self._session_registry[key] = sess.model_copy(
-                            update={"status": status}
-                        )
+                        self._session_registry[key] = sess.model_copy(update={"status": status})
                         break
                 break
 
@@ -200,9 +196,7 @@ class ManagedAgentExecutor:
 
         return all_events
 
-    def _events_to_message(
-        self, events: list[ManagedAgentEvent], source: Any
-    ) -> Any:
+    def _events_to_message(self, events: list[ManagedAgentEvent], source: Any) -> Any:
         """Collapse *events* into a single response message.
 
         Args:

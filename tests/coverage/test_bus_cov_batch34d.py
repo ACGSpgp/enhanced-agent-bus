@@ -587,29 +587,31 @@ class TestRedisConfigGetOrCreateClient:
         assert config._get_or_create_client() is fake_client
 
     def test_redis_import_error_returns_none(self):
-        import src.core.shared.redis_config as _rc_mod
-
         from enhanced_agent_bus._compat.redis_config import RedisConfig
 
         config = RedisConfig()
 
-        mock_redis = MagicMock()
-        mock_redis.Redis.from_url.side_effect = ImportError("no redis")
-
-        with patch.object(_rc_mod, "redis", mock_redis):
+        # _get_or_create_client does `import redis` locally, so we must
+        # block the import via sys.modules rather than patching a module attr.
+        with patch.dict("sys.modules", {"redis": None}):
             result = config._get_or_create_client()
         assert result is None
 
     def test_connection_error_returns_none(self):
-        import src.core.shared.redis_config as _rc_mod
-
         from enhanced_agent_bus._compat.redis_config import RedisConfig
 
         config = RedisConfig()
+
+        # Provide a fake redis module whose from_url raises ConnectionError.
+        # _get_or_create_client does `import redis` locally, so we inject
+        # a mock module into sys.modules.
         mock_redis_mod = MagicMock()
         mock_redis_mod.Redis.from_url.side_effect = ConnectionError("refused")
 
-        with patch.object(_rc_mod, "redis", mock_redis_mod):
+        with patch.dict(
+            "sys.modules",
+            {"redis": mock_redis_mod, "redis.client": MagicMock(), "redis.connection": MagicMock()},
+        ):
             result = config._get_or_create_client()
         assert result is None
 

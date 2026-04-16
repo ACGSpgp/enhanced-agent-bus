@@ -106,7 +106,9 @@ class DangerSignalAnalyzer:
             signals.append(
                 DangerSignal(
                     signal_id="high_impact_score",
-                    severity=DangerSeverity.HIGH if impact_score < 0.95 else DangerSeverity.CRITICAL,
+                    severity=DangerSeverity.HIGH
+                    if impact_score < 0.95
+                    else DangerSeverity.CRITICAL,
                     score=min(1.0, impact_score),
                     reason="Impact score indicates elevated governance risk.",
                     metadata={"impact_score": impact_score},
@@ -165,7 +167,9 @@ class DangerSignalAnalyzer:
                 )
             )
 
-        risk_score = max((signal.score for signal in signals), default=max(impact_score or 0.0, 0.0))
+        risk_score = max(
+            (signal.score for signal in signals), default=max(impact_score or 0.0, 0.0)
+        )
         total_validators = max(0, validator_count)
         if total_validators <= 1:
             return AdaptiveQuorumDecision(

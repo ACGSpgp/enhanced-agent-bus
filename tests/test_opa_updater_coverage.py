@@ -301,7 +301,10 @@ class TestOPAPolicyUpdaterConnect:
         with (
             patch("enhanced_agent_bus.constitutional.opa_updater.OPAClient", None),
             patch("enhanced_agent_bus.constitutional.opa_updater.AuditClient", mock_audit_cls),
-            patch("enhanced_agent_bus.constitutional.opa_updater.resolve_signing_provider", lambda: provider),
+            patch(
+                "enhanced_agent_bus.constitutional.opa_updater.resolve_signing_provider",
+                lambda: provider,
+            ),
         ):
             await updater.connect()
 

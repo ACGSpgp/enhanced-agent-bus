@@ -94,7 +94,10 @@ else:
                 if self.details:
                     result["details"] = self.details
                 if self.cause is not None:
-                    result["cause"] = {"type": type(self.cause).__name__, "message": str(self.cause)}
+                    result["cause"] = {
+                        "type": type(self.cause).__name__,
+                        "message": str(self.cause),
+                    }
                 return result
 
             def to_log_dict(self) -> dict[str, Any]:

@@ -83,6 +83,8 @@ class TestProposalValidationError:
 
 
 def test_engine_routes_signing_provider_into_audit_client(monkeypatch):
+    from enhanced_agent_bus.constitutional import proposal_engine as proposal_engine_module
+
     storage = _mock_storage()
     provider = HsmSigningProvider(secret=b"proposal-secret", key_id="proposal-hsm")
     captured: dict[str, object] = {}
@@ -95,14 +97,8 @@ def test_engine_routes_signing_provider_into_audit_client(monkeypatch):
         def __init__(self, *args: object, **kwargs: object) -> None:
             captured["config"] = kwargs.get("config")
 
-    monkeypatch.setattr(
-        "enhanced_agent_bus.constitutional.proposal_engine.AuditClientConfig",
-        DummyAuditClientConfig,
-    )
-    monkeypatch.setattr(
-        "enhanced_agent_bus.constitutional.proposal_engine.AuditClient",
-        DummyAuditClient,
-    )
+    monkeypatch.setattr(proposal_engine_module, "AuditClientConfig", DummyAuditClientConfig)
+    monkeypatch.setattr(proposal_engine_module, "AuditClient", DummyAuditClient)
 
     AmendmentProposalEngine(
         storage=storage,

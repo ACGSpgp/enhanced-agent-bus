@@ -46,6 +46,7 @@ class ImpactScorerProtocol(Protocol):
         """Calculate an aggregate impact score result."""
         ...
 
+
 # Import impact scoring service for governance-aware impact calculation
 try:
     from ..impact_scorer_infra import (
@@ -104,9 +105,7 @@ class AgentEngine(GuardrailComponent):
                 if get_impact_scorer_service is not None:
                     scorer = cast(ImpactScorerProtocol, get_impact_scorer_service())
                     self._impact_scorer = scorer
-                    logger.info(
-                        f"Impact scoring initialized (MiniCPM: {scorer.minicpm_available})"
-                    )
+                    logger.info(f"Impact scoring initialized (MiniCPM: {scorer.minicpm_available})")
             except (ImportError, RuntimeError, ValueError, TypeError) as e:
                 logger.warning(f"Failed to initialize impact scorer: {e}")
 

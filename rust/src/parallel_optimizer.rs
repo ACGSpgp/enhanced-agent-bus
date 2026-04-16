@@ -1,5 +1,5 @@
 //! ACGS-2 Enhanced Agent Bus - Parallel Optimization Framework
-//! Constitutional Hash: cdd01ef066bc6cf2
+//! Constitutional Hash: 608508a9bd224290
 //!
 //! Multi-agent optimization for high-throughput message processing:
 //! - Parallel batch processing with work stealing

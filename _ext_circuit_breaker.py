@@ -1,10 +1,36 @@
 # Constitutional Hash: 608508a9bd224290
-""" 
+# ruff: noqa: F401
+"""
 Optional circuit breaker imports for enhanced_agent_bus.
 Service-Specific Circuit Breaker Configuration (T002).
 """
 
 from typing import TYPE_CHECKING
+
+_EXT_ALL = [
+    "SERVICE_CIRCUIT_BREAKER_AVAILABLE",
+    "SERVICE_CIRCUIT_CONFIGS",
+    "ServiceCircuitConfig",
+    "ServiceCircuitBreaker",
+    "ServiceCircuitBreakerRegistry",
+    "ServiceSeverity",
+    "FallbackStrategy",
+    "CircuitState",
+    "CircuitBreakerOpen",
+    "CircuitBreakerMetrics",
+    "QueuedRequest",
+    "get_service_config",
+    "get_service_circuit_breaker",
+    "get_circuit_breaker_registry",
+    "reset_circuit_breaker_registry",
+    "with_service_circuit_breaker",
+    "create_circuit_health_router",
+]
+
+_FALLBACK_EXPORTS = {
+    "SERVICE_CIRCUIT_BREAKER_AVAILABLE": False,
+    "SERVICE_CIRCUIT_CONFIGS": {},
+}
 
 if TYPE_CHECKING:
     from .circuit_breaker import (
@@ -48,40 +74,5 @@ else:
 
         SERVICE_CIRCUIT_BREAKER_AVAILABLE = True
     except ImportError:
-        SERVICE_CIRCUIT_BREAKER_AVAILABLE = False
-        CircuitBreakerMetrics = object
-        CircuitBreakerOpen = object
-        CircuitState = object
-        FallbackStrategy = object
-        QueuedRequest = object
-        SERVICE_CIRCUIT_CONFIGS = {}
-        ServiceCircuitBreaker = object
-        ServiceCircuitBreakerRegistry = object
-        ServiceCircuitConfig = object
-        ServiceSeverity = object
-        create_circuit_health_router = object
-        get_circuit_breaker_registry = object
-        get_service_circuit_breaker = object
-        get_service_config = object
-        reset_circuit_breaker_registry = object
-        with_service_circuit_breaker = object
-
-_EXT_ALL = [
-    "SERVICE_CIRCUIT_BREAKER_AVAILABLE",
-    "SERVICE_CIRCUIT_CONFIGS",
-    "ServiceCircuitConfig",
-    "ServiceCircuitBreaker",
-    "ServiceCircuitBreakerRegistry",
-    "ServiceSeverity",
-    "FallbackStrategy",
-    "CircuitState",
-    "CircuitBreakerOpen",
-    "CircuitBreakerMetrics",
-    "QueuedRequest",
-    "get_service_config",
-    "get_service_circuit_breaker",
-    "get_circuit_breaker_registry",
-    "reset_circuit_breaker_registry",
-    "with_service_circuit_breaker",
-    "create_circuit_health_router",
-]
+        for name in _EXT_ALL:
+            globals()[name] = _FALLBACK_EXPORTS.get(name, object)

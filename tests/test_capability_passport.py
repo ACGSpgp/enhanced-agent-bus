@@ -1,4 +1,5 @@
 """Tests for ADR-018 capability passport."""
+
 import os
 from unittest.mock import patch
 
@@ -180,7 +181,9 @@ def test_passport_registry_invalid_passport_fail_closed(monkeypatch):
     passport = registry.create_default_passport("tampered-agent", default_tier="ADVISORY")
 
     # Tamper after registration
-    passport.domains.append(DomainAutonomy("tampered-agent", CapabilityDomain.FINANCIAL, "ADVISORY"))
+    passport.domains.append(
+        DomainAutonomy("tampered-agent", CapabilityDomain.FINANCIAL, "ADVISORY")
+    )
 
     # get_tier must re-verify and fail-close
     assert registry.get_tier("tampered-agent", "transfer funds") == "HUMAN_APPROVED"

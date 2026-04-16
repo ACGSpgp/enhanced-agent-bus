@@ -1,5 +1,5 @@
 //! ACGS-2 Enhanced Agent Bus - Error Types
-//! Constitutional Hash: cdd01ef066bc6cf2
+//! Constitutional Hash: 608508a9bd224290
 //!
 //! Structured error handling with proper categorization for governance operations.
 

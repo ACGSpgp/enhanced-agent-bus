@@ -1,5 +1,8 @@
 # Constitutional Hash: 608508a9bd224290
-"""Optional Lightpanda Browser Tool Integration."""
+"""Optional Lightpanda Browser Tool Integration.
+
+Not re-exported in ``__init__.py`` — experimental. Import directly if needed.
+"""
 
 try:
     from .tools.browser_tool import (

@@ -6,7 +6,6 @@ Constitutional Hash: 608508a9bd224290
 This module provides FastAPI endpoints for circuit breaker health monitoring.
 """
 
-
 from datetime import UTC, datetime
 
 from fastapi import APIRouter

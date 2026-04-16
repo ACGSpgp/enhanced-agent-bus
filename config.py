@@ -272,9 +272,7 @@ class BusConfiguration:
             governance_swarm_adaptive_quorum_enabled=cls._parse_bool(
                 os.getenv("GOVERNANCE_SWARM_ADAPTIVE_QUORUM_ENABLED", "false")
             ),
-            governance_tee_enabled=cls._parse_bool(
-                os.getenv("GOVERNANCE_TEE_ENABLED", "false")
-            ),
+            governance_tee_enabled=cls._parse_bool(os.getenv("GOVERNANCE_TEE_ENABLED", "false")),
             governance_tee_mode=os.getenv("GOVERNANCE_TEE_MODE", "local"),
             # Queue backpressure settings
             max_queue_size=cls._parse_int(os.getenv("MAX_QUEUE_SIZE"), 10_000),

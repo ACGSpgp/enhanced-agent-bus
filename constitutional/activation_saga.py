@@ -53,6 +53,7 @@ from .version_model import ConstitutionalStatus, ConstitutionalVersion
 try:
     from ..audit_client import AuditClient as _AuditClientImport
     from ..opa_client import OPAClient as _OPAClientImport
+
     _ImportedAuditClient = _AuditClientImport
     _ImportedOPAClient = _OPAClientImport
 except ImportError:
@@ -78,6 +79,7 @@ try:
     from ..deliberation_layer.workflows.constitutional_saga import (
         SagaStep as _SagaStepImport,
     )
+
     _ImportedConstitutionalSagaWorkflow = _ConstitutionalSagaWorkflowImport
     _ImportedSagaStep = _SagaStepImport
     _ImportedSagaCompensation = _SagaCompensationImport
@@ -101,6 +103,7 @@ logger = get_logger(__name__)
 
 
 if TYPE_CHECKING:
+
     class _ActivationSagaBaseError(Exception):
         http_status_code: int
         error_code: str
@@ -884,9 +887,7 @@ async def _close_activation_activities(saga: _SagaWorkflowProtocol) -> None:
         await activities.close()
 
 
-def _build_activation_context(
-    *, saga_id: str, amendment_id: str
-) -> _SagaContextProtocol:
+def _build_activation_context(*, saga_id: str, amendment_id: str) -> _SagaContextProtocol:
     if SagaContext is None:
         raise ImportError("SagaContext not available")
 

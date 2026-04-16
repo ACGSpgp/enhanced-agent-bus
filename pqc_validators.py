@@ -832,9 +832,7 @@ async def _check_key_registry_status(key_id: str) -> str:
     return "active"
 
 
-def _is_self_validation(
-    agent_id: str, target_output_id: str, record: dict[str, object]
-) -> bool:
+def _is_self_validation(agent_id: str, target_output_id: str, record: dict[str, object]) -> bool:
     """
     Check if agent is attempting self-validation (Gödel bypass prevention).
 

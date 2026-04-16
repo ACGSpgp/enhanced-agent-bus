@@ -55,6 +55,7 @@ except ImportError:
     def record_observation(**kwargs: Any) -> ToolObservation:
         return cast(ToolObservation, None)
 
+
 # Import validators
 try:
     from .validators import (
@@ -93,6 +94,7 @@ class MCPValidatorProtocol(Protocol):
     async def validate(self, context: object) -> MCPValidationResult:
         """Validate an MCP operation context."""
         ...
+
 
 # Type alias for tool handler functions
 ToolHandler = Callable[[JSONDict], Awaitable[JSONDict]]

@@ -305,6 +305,7 @@ def _load_get_iso_timestamp() -> Callable[[], str]:
                 from utils import get_iso_timestamp as direct_get_iso_timestamp
 
                 logger.debug("MACI utils loaded from direct import")
+
                 def _wrapped_direct_get_iso_timestamp() -> str:
                     return str(direct_get_iso_timestamp())
 

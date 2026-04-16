@@ -1,5 +1,8 @@
 # Constitutional Hash: 608508a9bd224290
-"""Optional Cognee Knowledge Graph Integration."""
+"""Optional Cognee Knowledge Graph Integration.
+
+Not re-exported in ``__init__.py`` — experimental. Import directly if needed.
+"""
 
 try:
     from .context_memory.cognee_ltm_adapter import (

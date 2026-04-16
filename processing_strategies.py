@@ -350,8 +350,10 @@ class RustProcessingStrategy(HandlerExecutorMixin):
 
             processor = cast(Any, self._rp).process
             rust_message = self._to_rust(msg)
-            res = await processor(rust_message) if inspect.iscoroutinefunction(processor) else processor(
-                rust_message
+            res = (
+                await processor(rust_message)
+                if inspect.iscoroutinefunction(processor)
+                else processor(rust_message)
             )
             if res.is_valid:
                 self._record_success()
@@ -472,9 +474,7 @@ class RustProcessingStrategy(HandlerExecutorMixin):
         r.content = {k: str(v) for k, v in msg.content.items()}
         r.from_agent, r.to_agent = msg.from_agent, msg.to_agent
         if hasattr(rb, "MessageType"):
-            r.message_type = getattr(
-                rb.MessageType, msg.message_type.name.replace("_", ""), None
-            )
+            r.message_type = getattr(rb.MessageType, msg.message_type.name.replace("_", ""), None)
         if hasattr(rb, "Priority"):
             r.priority = getattr(rb.Priority, msg.priority.name.capitalize(), None)
         elif hasattr(rb, "MessagePriority"):
@@ -637,8 +637,7 @@ class DynamicPolicyProcessingStrategy(PythonProcessingStrategy):
             metrics_enabled: Whether to enable metrics collection. Defaults to False.
         """
         super().__init__(
-            validation_strategy
-            or DynamicPolicyValidationStrategy(cast(Any, policy_client)),
+            validation_strategy or DynamicPolicyValidationStrategy(cast(Any, policy_client)),
             metrics_enabled,
         )
         self._policy_client = policy_client

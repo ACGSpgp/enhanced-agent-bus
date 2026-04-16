@@ -203,7 +203,10 @@ class TestInitialize:
             patch("enhanced_agent_bus.constitutional.rollback_engine.REDIS_AVAILABLE", False),
             patch("enhanced_agent_bus.constitutional.rollback_engine.OPAClient", None),
             patch("enhanced_agent_bus.constitutional.rollback_engine.AuditClient", mock_audit_cls),
-            patch("enhanced_agent_bus.constitutional.rollback_engine.resolve_signing_provider", lambda: provider),
+            patch(
+                "enhanced_agent_bus.constitutional.rollback_engine.resolve_signing_provider",
+                lambda: provider,
+            ),
         ):
             await act.initialize()
 

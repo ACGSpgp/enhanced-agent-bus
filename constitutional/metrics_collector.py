@@ -43,6 +43,7 @@ try:
 except ImportError:
     PERF_KERNELS_AVAILABLE = False
 
+
 class _RedisSettingsProtocol(Protocol):
     url: str
 
@@ -61,6 +62,7 @@ class _RedisMetricsClientProtocol(Protocol):
     async def zrangebyscore(self, key: str, minimum: float, maximum: float) -> list[str]: ...
     async def hgetall(self, key: str) -> Mapping[str, object]: ...
     async def zcount(self, key: str, minimum: float, maximum: float) -> int: ...
+
 
 class _FallbackRedisSettings:
     url = "redis://localhost:6379"

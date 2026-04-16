@@ -1,4 +1,5 @@
 """Tests for GovernanceProposal state machine and lifecycle."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -58,7 +59,9 @@ def test_proposal_from_suggested_rule() -> None:
 
 
 def test_approve_sets_status_and_hash() -> None:
-    prop = GovernanceProposal(rule_id="R1", rule_text="rule", status=ProposalStatus.CONSENSUS_REACHED)
+    prop = GovernanceProposal(
+        rule_id="R1", rule_text="rule", status=ProposalStatus.CONSENSUS_REACHED
+    )
     prop.approve("newhash_abc123")
     assert prop.status == ProposalStatus.APPROVED
     assert prop.new_constitutional_hash == "newhash_abc123"
@@ -137,14 +140,28 @@ def test_rejection_lifecycle_pending_to_rejected() -> None:
 
 
 def test_to_dict_keys_present() -> None:
-    prop = GovernanceProposal(rule_id="DICT-1", rule_text="test", rationale="reason", confidence=0.5)
+    prop = GovernanceProposal(
+        rule_id="DICT-1", rule_text="test", rationale="reason", confidence=0.5
+    )
     d = prop.to_dict()
 
     required_keys = {
-        "proposal_id", "rule_id", "rule_text", "rationale", "confidence",
-        "status", "created_at", "updated_at", "polis_statement_id",
-        "polis_vote_count", "polis_consensus_score", "nmc_session_id",
-        "nmc_confidence", "new_constitutional_hash", "deployed_at", "rejection_reason",
+        "proposal_id",
+        "rule_id",
+        "rule_text",
+        "rationale",
+        "confidence",
+        "status",
+        "created_at",
+        "updated_at",
+        "polis_statement_id",
+        "polis_vote_count",
+        "polis_consensus_score",
+        "nmc_session_id",
+        "nmc_confidence",
+        "new_constitutional_hash",
+        "deployed_at",
+        "rejection_reason",
     }
     assert required_keys.issubset(d.keys())
 

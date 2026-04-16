@@ -664,8 +664,10 @@ class ImpactScorer:
                 merged_context["content"] = message.get("content", message)
             merged_contexts.append(merged_context)
 
-        if self._bert_enabled and self._rust_scorer is not None and hasattr(
-            self._rust_scorer, "score_batch"
+        if (
+            self._bert_enabled
+            and self._rust_scorer is not None
+            and hasattr(self._rust_scorer, "score_batch")
         ):
             try:
                 batch_scores = self._rust_scorer.score_batch(

@@ -57,6 +57,7 @@ if TYPE_CHECKING:
 class _MetricsProvider(Protocol):
     def get_metrics(self) -> dict[str, object]: ...
 
+
 router = APIRouter()
 
 _latency_tracker = LatencyTracker()

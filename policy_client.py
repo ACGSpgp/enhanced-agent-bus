@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 class _MessageLike(Protocol):
     content: JSONDict
 
+
 try:
     from .validators import ValidationResult as _PackageValidationResult
 except (ImportError, ValueError):

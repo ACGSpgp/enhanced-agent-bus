@@ -126,7 +126,9 @@ class StreamingProcessor:
 
             # Concatenate outputs
             if outputs:
-                output = cast(Any, np.concatenate(outputs, axis=1 if len(embeddings.shape) == 3 else 0))
+                output = cast(
+                    Any, np.concatenate(outputs, axis=1 if len(embeddings.shape) == 3 else 0)
+                )
             else:
                 output = embeddings
 

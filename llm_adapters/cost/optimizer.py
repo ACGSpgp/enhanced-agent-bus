@@ -201,9 +201,7 @@ class CostOptimizer:
             ]
             if not observed_costs:
                 continue
-            max_cost_observed = max(
-                observed_costs
-            )
+            max_cost_observed = max(observed_costs)
             cost_score = 1 - (cost / max_cost_observed) if max_cost_observed > 0 else 0
 
             # Latency score (lower latency class is better)

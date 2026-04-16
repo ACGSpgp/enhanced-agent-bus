@@ -34,9 +34,7 @@ pytestmark = [pytest.mark.governance, pytest.mark.constitutional]
 import pathlib
 
 _MOD_NAME = "response_quality_flat_25a"
-_FILE_PATH = str(
-    pathlib.Path(__file__).parent.parent.parent / "response_quality.py"
-)
+_FILE_PATH = str(pathlib.Path(__file__).parent.parent.parent / "response_quality.py")
 
 _spec = importlib.util.spec_from_file_location(_MOD_NAME, _FILE_PATH)
 _mod = importlib.util.module_from_spec(_spec)  # type: ignore[arg-type]

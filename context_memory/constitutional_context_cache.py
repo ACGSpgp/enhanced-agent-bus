@@ -473,7 +473,11 @@ class ConstitutionalContextCache:
 
         try:
             prefixed_key = f"{self._key_prefix}{key}"
-            serializable = value if isinstance(value, (str, int, float, bool, dict, list)) or value is None else str(value)
+            serializable = (
+                value
+                if isinstance(value, (str, int, float, bool, dict, list)) or value is None
+                else str(value)
+            )
             await self._redis_client.setex(
                 prefixed_key,
                 ttl,

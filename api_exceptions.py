@@ -57,9 +57,7 @@ except (ImportError, ValueError):
         _exceptions_module = import_module(".fallback_stubs", __package__)
 
 try:
-    _ImportedRateLimitExceeded = cast(
-        type[Any], import_module("slowapi.errors").RateLimitExceeded
-    )
+    _ImportedRateLimitExceeded = cast(type[Any], import_module("slowapi.errors").RateLimitExceeded)
 except Exception:
     _ImportedRateLimitExceeded = cast(
         type[Any], import_module(".fallback_stubs", __package__).RateLimitExceeded

@@ -142,7 +142,9 @@ from .validation import MessageValidator
 # Rate Limiting imports
 _rate_limiter_compat: Any | None
 try:
-    _rate_limiter_compat = importlib.import_module("enhanced_agent_bus._compat.security.rate_limiter")
+    _rate_limiter_compat = importlib.import_module(
+        "enhanced_agent_bus._compat.security.rate_limiter"
+    )
     RATE_LIMITING_AVAILABLE = True
 except ImportError:
     _rate_limiter_compat = None
@@ -184,6 +186,7 @@ get_dynamic_context_engine = (
     else None
 )
 
+
 # Adaptive Governance imports
 async def _fallback_evaluate_message_governance(
     message: dict[str, Any], context: dict[str, Any]
@@ -221,12 +224,18 @@ AdaptiveGovernanceEngine = (
     else None
 )
 evaluate_message_governance = (
-    getattr(_adaptive_governance_module, "evaluate_message_governance", _fallback_evaluate_message_governance)
+    getattr(
+        _adaptive_governance_module,
+        "evaluate_message_governance",
+        _fallback_evaluate_message_governance,
+    )
     if _adaptive_governance_module is not None
     else _fallback_evaluate_message_governance
 )
 get_adaptive_governance = (
-    getattr(_adaptive_governance_module, "get_adaptive_governance", _fallback_get_adaptive_governance)
+    getattr(
+        _adaptive_governance_module, "get_adaptive_governance", _fallback_get_adaptive_governance
+    )
     if _adaptive_governance_module is not None
     else _fallback_get_adaptive_governance
 )
@@ -403,7 +412,11 @@ class EnhancedAgentBus:
                 logger.warning(f"Failed to initialize Agent Bus rate limiter: {e}")
 
         self._deliberation_queue = kwargs.get("deliberation_queue")
-        if not self._deliberation_queue and DELIBERATION_AVAILABLE and DeliberationQueue is not None:
+        if (
+            not self._deliberation_queue
+            and DELIBERATION_AVAILABLE
+            and DeliberationQueue is not None
+        ):
             self._deliberation_queue = DeliberationQueue()
 
         # Initialize validation strategy with PQC support
@@ -493,7 +506,9 @@ class EnhancedAgentBus:
             kwargs.get("enable_dynamic_context", True) and DYNAMIC_CONTEXT_AVAILABLE
         )
         self._dynamic_context_engine: Any | None = (
-            get_dynamic_context_engine() if self._dynamic_context_enabled and get_dynamic_context_engine else None
+            get_dynamic_context_engine()
+            if self._dynamic_context_enabled and get_dynamic_context_engine
+            else None
         )
 
     @property
@@ -765,9 +780,7 @@ class EnhancedAgentBus:
         if not self._running:
             if self._config.get("allow_unstarted") or self._is_test_mode_message(msg):
                 sent_count = self._metrics.get("sent", 0)
-                self._metrics["sent"] = (
-                    sent_count if isinstance(sent_count, int) else 0
-                ) + 1
+                self._metrics["sent"] = (sent_count if isinstance(sent_count, int) else 0) + 1
             else:
                 result.add_error("Agent bus is not started")
                 self._record_metrics_failure()

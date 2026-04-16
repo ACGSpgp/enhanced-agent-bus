@@ -61,6 +61,8 @@ class _PersistenceProtocol(Protocol):
     ) -> object: ...
 
     async def save_execution_result(self, result: ExecutionResult) -> object: ...
+
+
 SUPERVISOR_WORKFLOW_ERRORS = (
     RuntimeError,
     ValueError,

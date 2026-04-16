@@ -1,4 +1,5 @@
 """GovernanceLoopOrchestrator: bridges SuggestedRule → Polis → GovernanceProposal lifecycle."""
+
 from __future__ import annotations
 
 import asyncio

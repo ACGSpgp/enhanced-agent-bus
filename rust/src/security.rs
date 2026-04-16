@@ -45,6 +45,22 @@ pub fn detect_prompt_injection(content: &str) -> Option<ValidationResult> {
     None
 }
 
+/// Returns true when compiled with the `fips` feature flag.
+pub fn is_fips_mode() -> bool {
+    cfg!(feature = "fips")
+}
+
+/// Result of FIPS validation for a single cryptographic algorithm.
+#[derive(Debug, Clone)]
+pub struct FipsValidationResult {
+    /// Name of the cryptographic algorithm (e.g. "SHA-256", "Ed25519").
+    pub algorithm: String,
+    /// Whether this algorithm is FIPS-approved.
+    pub fips_approved: bool,
+    /// Human-readable attestation string.
+    pub attestation: String,
+}
+
 /// Bulk Cryptographic Validation Kernel
 pub struct BulkCryptoKernel;
 
@@ -137,6 +153,32 @@ impl BulkCryptoKernel {
         let peer_public_key = signature::UnparsedPublicKey::new(alg, pk);
         peer_public_key.verify(msg, sig).is_ok()
     }
+
+    /// Validate which cryptographic algorithms used by the kernel are FIPS-approved.
+    /// Returns a `FipsValidationResult` for each algorithm with an attestation string.
+    pub fn bulk_validate_fips() -> Vec<FipsValidationResult> {
+        let fips = is_fips_mode();
+        vec![
+            FipsValidationResult {
+                algorithm: "SHA-256".to_string(),
+                fips_approved: true, // SHA-256 is always FIPS-approved
+                attestation: if fips {
+                    "SHA-256: FIPS 180-4 approved (aws-lc-rs FIPS module active)".to_string()
+                } else {
+                    "SHA-256: FIPS 180-4 approved (FIPS module not active)".to_string()
+                },
+            },
+            FipsValidationResult {
+                algorithm: "Ed25519".to_string(),
+                fips_approved: fips, // Ed25519 only FIPS-approved when FIPS module is active
+                attestation: if fips {
+                    "Ed25519: FIPS 186-5 approved (aws-lc-rs FIPS module active)".to_string()
+                } else {
+                    "Ed25519: Not FIPS-approved without FIPS module".to_string()
+                },
+            },
+        ]
+    }
 }
 
 #[cfg(test)]
@@ -178,6 +220,30 @@ mod security_tests {
             "Bulk validation of {} messages took {:.3}ms",
             count, elapsed_ms
         );
+    }
+
+    #[test]
+    fn test_is_fips_mode() {
+        // Without the fips feature, this should be false
+        let fips = is_fips_mode();
+        assert!(!fips, "FIPS mode should be off without the feature flag");
+    }
+
+    #[test]
+    fn test_fips_validation_result_fields() {
+        let results = BulkCryptoKernel::bulk_validate_fips();
+        assert_eq!(results.len(), 2);
+
+        let sha256 = &results[0];
+        assert_eq!(sha256.algorithm, "SHA-256");
+        assert!(sha256.fips_approved, "SHA-256 is always FIPS-approved");
+        assert!(sha256.attestation.contains("SHA-256"));
+
+        let ed25519 = &results[1];
+        assert_eq!(ed25519.algorithm, "Ed25519");
+        // Without FIPS feature, Ed25519 is not FIPS-approved
+        assert!(!ed25519.fips_approved);
+        assert!(ed25519.attestation.contains("Ed25519"));
     }
 
     fn generate_test_key_and_sig(msg: &[u8]) -> (Vec<u8>, Vec<u8>) {

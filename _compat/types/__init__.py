@@ -20,7 +20,7 @@ else:
     try:
         from src.core.shared.types import *  # noqa: F403
     except ImportError:
-    # Standalone type alias fallbacks — mirrors _compat/types.py
+        # Standalone type alias fallbacks — mirrors _compat/types.py
         JSONPrimitive: TypeAlias = str | int | float | bool | None
         JSONDict: TypeAlias = dict[str, Any]
         JSONList: TypeAlias = list[Any]

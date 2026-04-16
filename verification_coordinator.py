@@ -68,7 +68,10 @@ class VerificationCoordinator:
         msg: AgentMessage,
         content_str: str,
     ) -> tuple[JSONDict, JSONDict]:
-        return cast(tuple[JSONDict, JSONDict], await self._verification_orchestrator._perform_sdpc(msg, content_str))
+        return cast(
+            tuple[JSONDict, JSONDict],
+            await self._verification_orchestrator._perform_sdpc(msg, content_str),
+        )
 
     async def perform_pqc_validation(
         self,

@@ -497,7 +497,10 @@ class RedisConnectionPool:
             self._metrics["total_latency_ms"] += elapsed_ms
             self._metrics["total_operations"] += 1
 
-            return [result if isinstance(result, str) or result is None else str(result) for result in results]
+            return [
+                result if isinstance(result, str) or result is None else str(result)
+                for result in results
+            ]
 
         except RedisConnectionError as e:
             self._metrics["failed_operations"] += 1

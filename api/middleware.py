@@ -53,34 +53,25 @@ TenantContextMiddleware: type[Any]
 get_cors_config: Callable[..., dict[str, object]]
 try:
     from src.core.shared.security.cors_config import get_cors_config as _get_cors_config
+
     _security_headers = importlib.import_module("src.core.shared.security.security_headers")
     _tenant_context = importlib.import_module("src.core.shared.security.tenant_context")
 
     get_cors_config = cast(Callable[..., dict[str, object]], _get_cors_config)
     SecurityHeadersConfig = cast(type[Any], _security_headers.SecurityHeadersConfig)
-    SecurityHeadersMiddleware = cast(
-        type[Any], _security_headers.SecurityHeadersMiddleware
-    )
+    SecurityHeadersMiddleware = cast(type[Any], _security_headers.SecurityHeadersMiddleware)
     TenantContextConfig = cast(type[Any], _tenant_context.TenantContextConfig)
-    TenantContextMiddleware = cast(
-        type[Any], _tenant_context.TenantContextMiddleware
-    )
+    TenantContextMiddleware = cast(type[Any], _tenant_context.TenantContextMiddleware)
     SECURITY_HEADERS_AVAILABLE = True
 except ImportError:
     SECURITY_HEADERS_AVAILABLE = False
     _fallback_stubs = importlib.import_module("enhanced_agent_bus.fallback_stubs")
 
-    get_cors_config = cast(
-        Callable[..., dict[str, object]], _fallback_stubs.stub_get_cors_config
-    )
+    get_cors_config = cast(Callable[..., dict[str, object]], _fallback_stubs.stub_get_cors_config)
     SecurityHeadersConfig = cast(type[Any], _fallback_stubs.StubSecurityHeadersConfig)
-    SecurityHeadersMiddleware = cast(
-        type[Any], _fallback_stubs.StubSecurityHeadersMiddleware
-    )
+    SecurityHeadersMiddleware = cast(type[Any], _fallback_stubs.StubSecurityHeadersMiddleware)
     TenantContextConfig = cast(type[Any], _fallback_stubs.StubTenantContextConfig)
-    TenantContextMiddleware = cast(
-        type[Any], _fallback_stubs.StubTenantContextMiddleware
-    )
+    TenantContextMiddleware = cast(type[Any], _fallback_stubs.StubTenantContextMiddleware)
 
 # API Versioning Middleware
 API_VERSIONING_AVAILABLE = False

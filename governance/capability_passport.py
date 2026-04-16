@@ -1,4 +1,5 @@
 """ADR-018 capability passport: domain-scoped autonomy levels for AI agents."""
+
 from __future__ import annotations
 
 import hmac
@@ -23,9 +24,31 @@ class CapabilityDomain(StrEnum):
 
 
 DOMAIN_KEYWORDS: dict[CapabilityDomain, list[str]] = {
-    CapabilityDomain.FINANCIAL: ["payment", "transfer", "transaction", "invoice", "billing", "fund"],
-    CapabilityDomain.SECURITY: ["credential", "secret", "key", "token", "password", "auth", "exploit"],
-    CapabilityDomain.INFRASTRUCTURE: ["deploy", "kubernetes", "terraform", "database", "migration", "shutdown"],
+    CapabilityDomain.FINANCIAL: [
+        "payment",
+        "transfer",
+        "transaction",
+        "invoice",
+        "billing",
+        "fund",
+    ],
+    CapabilityDomain.SECURITY: [
+        "credential",
+        "secret",
+        "key",
+        "token",
+        "password",
+        "auth",
+        "exploit",
+    ],
+    CapabilityDomain.INFRASTRUCTURE: [
+        "deploy",
+        "kubernetes",
+        "terraform",
+        "database",
+        "migration",
+        "shutdown",
+    ],
     CapabilityDomain.CODE_REVIEW: ["review", "diff", "patch", "lint", "test", "refactor"],
     CapabilityDomain.DOCUMENTATION: ["readme", "docs", "changelog", "docstring", "comment"],
     CapabilityDomain.RESEARCH: ["search", "summarize", "analyze", "compare", "benchmark"],

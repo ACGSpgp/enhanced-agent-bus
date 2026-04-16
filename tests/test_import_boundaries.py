@@ -27,7 +27,9 @@ FORBIDDEN_PREFIXES = (
 )
 
 # Pre-existing violations being tracked.
-KNOWN_VIOLATIONS: set[str] = set()  # Empty — governance_core.py no longer imports constitutional_swarm.
+KNOWN_VIOLATIONS: set[str] = (
+    set()
+)  # Empty — governance_core.py no longer imports constitutional_swarm.
 
 
 def _iter_imports(path: Path) -> list[str]:

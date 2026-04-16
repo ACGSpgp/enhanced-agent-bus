@@ -892,9 +892,7 @@ class PostgresWorkflowRepository(WorkflowRepository):
             artifact_manifest_uri=row["artifact_manifest_uri"],
             window_started_at=row["window_started_at"] if "window_started_at" in row else None,
             window_ended_at=row["window_ended_at"] if "window_ended_at" in row else None,
-            source_counts=(
-                _as_any_dict(row["source_counts"]) if "source_counts" in row else {}
-            )
+            source_counts=(_as_any_dict(row["source_counts"]) if "source_counts" in row else {})
             or {},
             created_at=row["created_at"],
         )

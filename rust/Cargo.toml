@@ -31,6 +31,9 @@ aws-lc-rs = "1.15"
 sha2 = "0.10"
 multiversion = "0.7"
 zeroize = { version = "1.7", features = ["derive"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
 pyo3-async-runtimes = { version = "0.23", features = ["tokio-runtime"] }
 numpy = "0.23"
 ndarray = { version = "0.16", features = ["rayon"] }
@@ -45,6 +48,9 @@ optional = true
 [dependencies.tokenizers]
 version = "0.22"
 features = ["onig", "http", "hf-hub"]
+
+[features]
+fips = ["aws-lc-rs/fips"]
 
 [dev-dependencies]
 criterion = "0.8"

@@ -116,6 +116,7 @@ class MockLiteLLM:
 # Attempt to import LiteLLM
 try:
     import litellm
+
     Cache = cast(Any, litellm).Cache
     LITELLM_AVAILABLE = True
 except ImportError:

@@ -220,7 +220,6 @@ class TestBundleManifest:
 
         assert len(digest) == 64  # SHA256 hex length
 
-
     def test_compute_digest_deterministic(self):
         """compute_digest returns same value for same content."""
         manifest1 = BundleManifest(
@@ -547,7 +546,9 @@ class TestBundleDistributionService:
 
         monkeypatch.setattr(
             "enhanced_agent_bus.bundle_registry.LocalEd25519SigningProvider",
-            lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("local signer constructed")),
+            lambda *args, **kwargs: (_ for _ in ()).throw(
+                AssertionError("local signer constructed")
+            ),
         )
 
         service = BundleDistributionService(primary, signing_provider=provider)

@@ -91,6 +91,7 @@ if TYPE_CHECKING:
         VALID_STATE_TRANSITIONS,
         PostgresSagaStateRepository,
     )
+
     POSTGRES_AVAILABLE = True
 else:
     try:
@@ -124,6 +125,7 @@ if TYPE_CHECKING:
         SAGA_STATE_PREFIX,
         RedisSagaStateRepository,
     )
+
     REDIS_AVAILABLE = True
 else:
     try:

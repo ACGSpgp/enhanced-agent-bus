@@ -21,10 +21,19 @@ from .dataset_builder import (
     UnredactedDatasetError,
 )
 from .ingest import build_decision_event, build_feedback_event
-from .models import (
-    CandidateArtifact as CanonicalCandidateArtifact,
+from .metrics import (
+    EvolutionAssessment,
+    EvolutionRecord,
+    EvolutionSummary,
+    EvolutionViolation,
+    EvolutionViolationKind,
+    InvariantStatus,
+    assess_metric_evolution,
+    summarize_evolution_records,
 )
 from .models import (
+    VALID_APPROVAL_TRANSITIONS,
+    ApprovalState,
     DatasetSnapshot,
     DecisionEvent,
     EvaluationMode,
@@ -32,6 +41,10 @@ from .models import (
     EvidenceBundle,
     FeedbackEvent,
     WorkloadKey,
+    validate_approval_transition,
+)
+from .models import (
+    CandidateArtifact as CanonicalCandidateArtifact,
 )
 from .redaction import REDACTED_TOKEN, contains_unredacted_pii, redact_for_dataset_export
 from .run_orchestrator import (
@@ -44,6 +57,7 @@ from .run_orchestrator import (
 from .workload_registry import build_workload_key, normalize_workload_segment
 
 __all__ = [
+    "ApprovalState",
     "DEFAULT_FLYWHEEL_CONFIG",
     "CanonicalCandidateArtifact",
     "CandidateModel",
@@ -56,6 +70,11 @@ __all__ = [
     "EvaluationConfig",
     "EvaluationRun",
     "EvidenceBundle",
+    "EvolutionAssessment",
+    "EvolutionRecord",
+    "EvolutionSummary",
+    "EvolutionViolation",
+    "EvolutionViolationKind",
     "ExperimentType",
     "FeedbackEventSource",
     "FeedbackEvent",
@@ -69,17 +88,22 @@ __all__ = [
     "FlywheelRunTerminalStateError",
     "ICLConfig",
     "InMemoryFeedbackEventSource",
+    "InvariantStatus",
     "MixedConstitutionalHashError",
     "ModelSelectionStrategy",
     "REDACTED_TOKEN",
     "RedisFeedbackEventSource",
     "TrainingConfig",
     "UnredactedDatasetError",
+    "VALID_APPROVAL_TRANSITIONS",
     "WorkloadKey",
+    "assess_metric_evolution",
     "build_decision_event",
     "build_feedback_event",
     "build_workload_key",
     "contains_unredacted_pii",
     "normalize_workload_segment",
     "redact_for_dataset_export",
+    "summarize_evolution_records",
+    "validate_approval_transition",
 ]

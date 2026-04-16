@@ -918,7 +918,9 @@ class TestLifespanShutdown:
         await self._run_full_lifespan(
             fake_app,
             extra_patches=[
-                patch.object(app_module, "_stop_cache_warmer_if_running", side_effect=_simulated_stop),
+                patch.object(
+                    app_module, "_stop_cache_warmer_if_running", side_effect=_simulated_stop
+                ),
             ],
         )
 
@@ -937,7 +939,9 @@ class TestLifespanShutdown:
         await self._run_full_lifespan(
             fake_app,
             extra_patches=[
-                patch.object(app_module, "_stop_cache_warmer_if_running", side_effect=_simulated_stop),
+                patch.object(
+                    app_module, "_stop_cache_warmer_if_running", side_effect=_simulated_stop
+                ),
             ],
         )
 

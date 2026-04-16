@@ -27,7 +27,9 @@ from enhanced_agent_bus.federation.policy_learning import (
 CONSTITUTIONAL_HASH = "608508a9bd224290"
 
 
-def _make_bilateral_entry(action_summary: str = "Validated bilateral federation handshake") -> BilateralAuditEntry:
+def _make_bilateral_entry(
+    action_summary: str = "Validated bilateral federation handshake",
+) -> BilateralAuditEntry:
     base_entry = BilateralAuditEntry(
         local_org_id="org-local",
         peer_org_id="org-peer",
@@ -259,7 +261,10 @@ def test_amendment_suggestions_capped_influence() -> None:
         version="1.0",
         org_id="org-local",
     )
-    peer_signals = [_make_signal(category="audit", severity="CRITICAL", org_id=f"org-{index}") for index in range(5)]
+    peer_signals = [
+        _make_signal(category="audit", severity="CRITICAL", org_id=f"org-{index}")
+        for index in range(5)
+    ]
 
     suggestions = generate_amendment_suggestions(local_vector, peer_signals, max_peer_influence=0.1)
 

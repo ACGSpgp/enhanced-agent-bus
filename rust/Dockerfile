@@ -1,6 +1,6 @@
 # ================================
 # ACGS-2 Enhanced Agent Bus - Security Hardened Dockerfile
-# Constitutional Hash: cdd01ef066bc6cf2
+# Constitutional Hash: 608508a9bd224290
 # ================================
 
 # ================================
@@ -79,7 +79,7 @@ LABEL org.opencontainers.image.title="ACGS-2 Enhanced Agent Bus" \
       org.opencontainers.image.vendor="ACGS-2" \
       org.opencontainers.image.version="2.0.0" \
       org.opencontainers.image.source="https://github.com/dislovelhl/acgs2/enhanced-agent-bus" \
-      acgs.io/constitutional-hash="cdd01ef066bc6cf2"
+      acgs.io/constitutional-hash="608508a9bd224290"
 
 # Security: Create non-root user and group
 RUN groupadd -r appgroup -g 1000 && \

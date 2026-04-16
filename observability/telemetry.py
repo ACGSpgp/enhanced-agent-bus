@@ -604,7 +604,9 @@ class MetricsRegistry:
             )
         return self._counters[name]
 
-    def get_histogram(self, name: str, unit: str = "ms", description: str = "") -> _HistogramProtocol:
+    def get_histogram(
+        self, name: str, unit: str = "ms", description: str = ""
+    ) -> _HistogramProtocol:
         """Get or create a histogram metric."""
         if name not in self._histograms:
             full_name = f"acgs2.{self.service_name}.{name}"

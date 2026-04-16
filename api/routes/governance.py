@@ -141,6 +141,7 @@ async def get_stability_metrics(
 # PQC Enforcement Integration (Phase 3)
 # ---------------------------------------------------------------------------
 
+
 def _load_enforcement_mode_config_service_type() -> type[Any] | None:
     """Load the PQC enforcement service class from the shared or standalone path."""
     for module_name, package in (
@@ -180,6 +181,7 @@ def _load_pqc_validators() -> tuple[
 
 _EnforcementModeConfigService = _load_enforcement_mode_config_service_type()
 check_enforcement_for_create, check_enforcement_for_update = _load_pqc_validators()
+
 
 def _load_pqc_error(name: str) -> type[Exception] | None:
     """Load a PQC exception class from the shared or standalone module path."""

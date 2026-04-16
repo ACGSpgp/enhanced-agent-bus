@@ -144,7 +144,12 @@ class TestStabilizeWeights:
 
         with patch.dict(
             "enhanced_agent_bus.deliberation_layer.vote_collector.__dict__",
-            {"RUST_AVAILABLE": True, "NUMPY_AVAILABLE": True, "_rust_opt": mock_rust, "_np": mock_np},
+            {
+                "RUST_AVAILABLE": True,
+                "NUMPY_AVAILABLE": True,
+                "_rust_opt": mock_rust,
+                "_np": mock_np,
+            },
         ):
             # Call via the module globals path using patch
             import enhanced_agent_bus.deliberation_layer.vote_collector as vc_mod

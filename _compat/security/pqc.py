@@ -27,10 +27,12 @@ if TYPE_CHECKING:
 else:
     try:
         from src.core.shared.security.pqc import *  # noqa: F403
+
         # KeyRegistryUnavailableError is not in src.core.__all__; import explicitly.
         try:
             from src.core.shared.security.pqc import KeyRegistryUnavailableError  # noqa: F401
         except ImportError:
+
             class KeyRegistryUnavailableError(PQCError):  # type: ignore[misc,name-defined]
                 pass
     except ImportError:
@@ -90,6 +92,7 @@ else:
             if upper_name in APPROVED_PQC:
                 return upper_name
             raise UnsupportedAlgorithmError(f"Unsupported PQC algorithm: {algorithm_name}")
+
 
 __all__ = [
     "APPROVED_CLASSICAL",

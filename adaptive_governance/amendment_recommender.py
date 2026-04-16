@@ -277,9 +277,7 @@ class AmendmentRecommender:
             return RecommendationPriority.MEDIUM
         return RecommendationPriority.LOW
 
-    def _suggest_changes(
-        self, target_area: str, risk_score: float, context: JSONDict
-    ) -> JSONDict:
+    def _suggest_changes(self, target_area: str, risk_score: float, context: JSONDict) -> JSONDict:
         """Generate suggested changes based on risk signal."""
         return {
             target_area: {

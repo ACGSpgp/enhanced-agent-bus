@@ -71,9 +71,7 @@ class GovernanceIntegration:
             "time": get_iso_timestamp(),
             "current_metrics": dict(self._metrics),
         }
-        result: tuple[bool, str] = await self._governance.evaluate_adaptive_governance(
-            msg, context
-        )
+        result: tuple[bool, str] = await self._governance.evaluate_adaptive_governance(msg, context)
         return result
 
     def provide_feedback(self, msg: AgentMessage, success: bool) -> None:

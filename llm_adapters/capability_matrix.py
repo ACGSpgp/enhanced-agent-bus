@@ -339,10 +339,7 @@ class ProviderCapabilityProfile(BaseModel):
             CapabilityDimension.CACHED_INPUT_COST_PER_1K: self.cached_input_cost_per_1k,
         }
         value = value_map.get(dimension)
-        if not (
-            value is None
-            or isinstance(value, (bool, int, float, str, CapabilityLevel))
-        ):
+        if not (value is None or isinstance(value, (bool, int, float, str, CapabilityLevel))):
             value = str(value)
         return CapabilityValue(
             dimension=dimension,

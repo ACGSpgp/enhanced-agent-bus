@@ -130,7 +130,11 @@ async def test_submit_proposal_passes_adaptive_quorum_when_enabled(monkeypatch):
     service = ConstitutionalCouncilService(
         voting_service=voting_service,
         proposal_engine=proposal_engine,
-        council_members={"proposer-1": public_key, "reviewer-1": "11" * 16, "reviewer-2": "22" * 16},
+        council_members={
+            "proposer-1": public_key,
+            "reviewer-1": "11" * 16,
+            "reviewer-2": "22" * 16,
+        },
         enable_adaptive_quorum=True,
         enable_danger_signals=True,
     )

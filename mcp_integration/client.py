@@ -387,7 +387,9 @@ class MCPClient:
         """Finalize successful connection setup."""
         connection = self._connection
         if connection is None:
-            raise MCPConnectionError("Connection missing during finalization", server_id=self.server_id)
+            raise MCPConnectionError(
+                "Connection missing during finalization", server_id=self.server_id
+            )
         connection.state = MCPClientState.READY
         connection.connected_at = datetime.now(UTC)
         self._successful_connections += 1
@@ -423,7 +425,9 @@ class MCPClient:
         # This would implement actual transport connection
         # For now, we simulate successful connection
         if self._connection is None:
-            raise MCPConnectionError("Connection missing during transport setup", server_id=self.server_id)
+            raise MCPConnectionError(
+                "Connection missing during transport setup", server_id=self.server_id
+            )
         self._connection.state = MCPClientState.CONNECTED
         await asyncio.sleep(0.01)  # Simulate connection latency
 
@@ -431,7 +435,9 @@ class MCPClient:
         """Initialize the MCP protocol with the server."""
         connection = self._connection
         if connection is None:
-            raise MCPConnectionError("Connection missing during initialization", server_id=self.server_id)
+            raise MCPConnectionError(
+                "Connection missing during initialization", server_id=self.server_id
+            )
         connection.state = MCPClientState.INITIALIZING
 
         # Send initialize request
@@ -484,7 +490,9 @@ class MCPClient:
         response = await self._send_request("tools/list", {})
         connection = self._connection
         if connection is None:
-            raise MCPConnectionError("Connection missing during tool discovery", server_id=self.server_id)
+            raise MCPConnectionError(
+                "Connection missing during tool discovery", server_id=self.server_id
+            )
         tools_raw = response.get("tools", [])
         tools = tools_raw if isinstance(tools_raw, list) else []
         connection.tools = [tool for tool in tools if isinstance(tool, dict)]

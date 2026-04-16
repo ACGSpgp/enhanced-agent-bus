@@ -10,6 +10,7 @@ from typing import Any, Protocol
 
 try:
     import redis.asyncio as _redis_asyncio
+
     redis_asyncio: Any = _redis_asyncio
 except ImportError:
     redis_asyncio = None

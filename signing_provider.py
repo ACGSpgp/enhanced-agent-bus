@@ -38,7 +38,9 @@ class LocalEd25519SigningProvider:
     algorithm: str = "ed25519"
 
     def sign(self, payload: bytes) -> bytes:
-        private_key = ed25519.Ed25519PrivateKey.from_private_bytes(bytes.fromhex(self.private_key_hex))
+        private_key = ed25519.Ed25519PrivateKey.from_private_bytes(
+            bytes.fromhex(self.private_key_hex)
+        )
         return private_key.sign(payload)
 
     def metadata(self) -> JSONDict:

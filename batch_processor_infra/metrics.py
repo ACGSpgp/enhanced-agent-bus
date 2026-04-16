@@ -79,19 +79,13 @@ class BatchMetrics:
         from enhanced_agent_bus.models import BatchItemStatus
 
         successful = sum(
-            1
-            for r in results
-            if getattr(r, "status", None) == BatchItemStatus.SUCCESS.value
+            1 for r in results if getattr(r, "status", None) == BatchItemStatus.SUCCESS.value
         )
         failed = sum(
-            1
-            for r in results
-            if getattr(r, "status", None) == BatchItemStatus.FAILED.value
+            1 for r in results if getattr(r, "status", None) == BatchItemStatus.FAILED.value
         )
         skipped = sum(
-            1
-            for r in results
-            if getattr(r, "status", None) == BatchItemStatus.SKIPPED.value
+            1 for r in results if getattr(r, "status", None) == BatchItemStatus.SKIPPED.value
         )
 
         item_latencies = [

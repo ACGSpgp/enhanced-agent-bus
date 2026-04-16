@@ -107,6 +107,7 @@ else:
                     "features": {f.name: v for f, v in cls._feature_status.items()},
                 }
 
+
 _registry: DependencyRegistry | None = None
 
 
@@ -121,5 +122,6 @@ def get_dependency_registry() -> DependencyRegistry:
     if _registry is None:
         _registry = DependencyRegistry()
     return _registry
+
 
 __all__ = ["DependencyRegistry", "FeatureFlag", "get_dependency_registry"]

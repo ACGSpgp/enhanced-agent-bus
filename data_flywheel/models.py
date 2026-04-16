@@ -32,6 +32,56 @@ class EvaluationMode(StrEnum):
     CANARY = "canary"
 
 
+class ApprovalState(StrEnum):
+    """Lifecycle approval state for evidence bundles.
+
+    Mirrors the canonical ``BundleStatus`` values defined in
+    ``acgs_lite.constitution.bundle`` by convention (not import) so the
+    two packages remain decoupled while sharing the same state vocabulary.
+    """
+
+    DRAFT = "draft"
+    REVIEW = "review"
+    EVAL = "eval"
+    APPROVE = "approve"
+    STAGED = "staged"
+    ACTIVE = "active"
+    ROLLED_BACK = "rolled_back"
+    SUPERSEDED = "superseded"
+    REJECTED = "rejected"
+    WITHDRAWN = "withdrawn"
+
+
+VALID_APPROVAL_TRANSITIONS: dict[ApprovalState, set[ApprovalState]] = {
+    ApprovalState.DRAFT: {ApprovalState.REVIEW, ApprovalState.WITHDRAWN},
+    ApprovalState.REVIEW: {ApprovalState.EVAL, ApprovalState.REJECTED, ApprovalState.WITHDRAWN},
+    ApprovalState.EVAL: {ApprovalState.APPROVE, ApprovalState.REJECTED, ApprovalState.WITHDRAWN},
+    ApprovalState.APPROVE: {ApprovalState.STAGED, ApprovalState.REJECTED, ApprovalState.WITHDRAWN},
+    ApprovalState.STAGED: {
+        ApprovalState.ACTIVE,
+        ApprovalState.ROLLED_BACK,
+        ApprovalState.WITHDRAWN,
+    },
+    ApprovalState.ACTIVE: {ApprovalState.ROLLED_BACK, ApprovalState.SUPERSEDED},
+    ApprovalState.ROLLED_BACK: {ApprovalState.DRAFT, ApprovalState.SUPERSEDED},
+    ApprovalState.SUPERSEDED: set(),
+    ApprovalState.REJECTED: set(),
+    ApprovalState.WITHDRAWN: set(),
+}
+
+
+def validate_approval_transition(
+    from_state: ApprovalState | str,
+    to_state: ApprovalState | str,
+) -> None:
+    """Raise ``ValueError`` if *from_state* → *to_state* is not allowed."""
+    src = ApprovalState(from_state)
+    dst = ApprovalState(to_state)
+    allowed = VALID_APPROVAL_TRANSITIONS.get(src, set())
+    if dst not in allowed:
+        raise ValueError(f"Invalid approval transition: {src.value!r} → {dst.value!r}")
+
+
 class WorkloadKey(BaseModel):
     tenant_id: str = Field(min_length=1, max_length=255)
     service: str = Field(min_length=1, max_length=255)
@@ -123,6 +173,17 @@ class EvaluationRun(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
+# Legacy approval_state values that may exist in persisted records.
+# Maps them to canonical ApprovalState values for backward compatibility.
+_LEGACY_APPROVAL_STATE_MAP: dict[str, ApprovalState] = {
+    "pending": ApprovalState.DRAFT,
+    "pending_review": ApprovalState.REVIEW,
+    "approved": ApprovalState.APPROVE,
+    "published": ApprovalState.ACTIVE,
+    "revoked": ApprovalState.WITHDRAWN,
+}
+
+
 class EvidenceBundle(BaseModel):
     evidence_id: str = Field(default_factory=lambda: str(uuid4()))
     tenant_id: str = Field(min_length=1, max_length=255)
@@ -130,7 +191,27 @@ class EvidenceBundle(BaseModel):
     candidate_id: str = Field(min_length=1, max_length=255)
     dataset_snapshot_id: str = Field(min_length=1, max_length=255)
     constitutional_hash: str = Field(default=CONSTITUTIONAL_HASH, min_length=1, max_length=64)
-    approval_state: str = Field(min_length=1, max_length=64)
+    approval_state: ApprovalState
+
+    @field_validator("approval_state", mode="before")
+    @classmethod
+    def _coerce_legacy_approval_state(cls, value: object) -> object:
+        """Accept legacy string values from persisted records."""
+        if isinstance(value, ApprovalState):
+            return value
+        if isinstance(value, str):
+            # Try canonical enum first
+            try:
+                return ApprovalState(value)
+            except ValueError:
+                pass
+            # Fall back to legacy mapping
+            mapped = _LEGACY_APPROVAL_STATE_MAP.get(value.lower().strip())
+            if mapped is not None:
+                return mapped
+            # Unknown value — let Pydantic raise a clear error
+        return value
+
     validator_records: list[JSONDict] = Field(default_factory=list)
     rollback_plan: JSONDict = Field(default_factory=dict)
     artifact_manifest_uri: str = Field(min_length=1)
@@ -138,6 +219,7 @@ class EvidenceBundle(BaseModel):
 
 
 __all__ = [
+    "ApprovalState",
     "CandidateArtifact",
     "DatasetSnapshot",
     "DecisionEvent",
@@ -145,5 +227,7 @@ __all__ = [
     "EvaluationRun",
     "EvidenceBundle",
     "FeedbackEvent",
+    "VALID_APPROVAL_TRANSITIONS",
     "WorkloadKey",
+    "validate_approval_transition",
 ]

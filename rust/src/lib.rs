@@ -7,7 +7,7 @@
 //!
 //! # Constitutional Compliance
 //!
-//! All operations validate against constitutional hash: `cdd01ef066bc6cf2`
+//! All operations validate against constitutional hash: `608508a9bd224290`
 //!
 //! # Modules
 //!

@@ -8,6 +8,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from pydantic import ValidationError
 
 if "asyncpg" not in sys.modules:
     _asyncpg_stub = types.ModuleType("asyncpg")
@@ -112,7 +113,7 @@ def make_evidence_bundle(**kwargs: Any) -> EvidenceBundle:
         "candidate_id": "candidate-001",
         "dataset_snapshot_id": "snapshot-001",
         "constitutional_hash": "608508a9bd224290",
-        "approval_state": "pending_review",
+        "approval_state": "review",
         "validator_records": [{"validator": "agent-validator"}],
         "rollback_plan": {"action": "restore-thresholds"},
         "artifact_manifest_uri": "s3://flywheel/evidence/evidence-001.json",
@@ -363,3 +364,58 @@ class TestPostgresFlywheelPersistence:
 
         with pytest.raises(Exception, match="Failed to list flywheel evaluation runs"):
             await repo.list_evaluation_runs("tenant-a")
+
+
+class TestApprovalStateCompatibility:
+    """Ensure persisted legacy approval_state values are coerced correctly."""
+
+    def _make(self, approval_state: str) -> EvidenceBundle:
+        return EvidenceBundle(
+            tenant_id="t",
+            workload_key="w",
+            candidate_id="c",
+            dataset_snapshot_id="s",
+            approval_state=approval_state,
+            artifact_manifest_uri="s3://x",
+        )
+
+    def test_canonical_values_pass_through(self) -> None:
+        from enhanced_agent_bus.data_flywheel.models import ApprovalState
+
+        for state in ApprovalState:
+            eb = self._make(state.value)
+            assert eb.approval_state == state
+
+    def test_legacy_pending_review_maps_to_review(self) -> None:
+        from enhanced_agent_bus.data_flywheel.models import ApprovalState
+
+        eb = self._make("pending_review")
+        assert eb.approval_state == ApprovalState.REVIEW
+
+    def test_legacy_approved_maps_to_approve(self) -> None:
+        from enhanced_agent_bus.data_flywheel.models import ApprovalState
+
+        eb = self._make("approved")
+        assert eb.approval_state == ApprovalState.APPROVE
+
+    def test_legacy_pending_maps_to_draft(self) -> None:
+        from enhanced_agent_bus.data_flywheel.models import ApprovalState
+
+        eb = self._make("pending")
+        assert eb.approval_state == ApprovalState.DRAFT
+
+    def test_legacy_published_maps_to_active(self) -> None:
+        from enhanced_agent_bus.data_flywheel.models import ApprovalState
+
+        eb = self._make("published")
+        assert eb.approval_state == ApprovalState.ACTIVE
+
+    def test_legacy_revoked_maps_to_withdrawn(self) -> None:
+        from enhanced_agent_bus.data_flywheel.models import ApprovalState
+
+        eb = self._make("revoked")
+        assert eb.approval_state == ApprovalState.WITHDRAWN
+
+    def test_unknown_value_raises(self) -> None:
+        with pytest.raises(ValidationError):
+            self._make("bogus_nonexistent_state")

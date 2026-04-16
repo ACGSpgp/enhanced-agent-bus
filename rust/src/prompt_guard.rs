@@ -1,5 +1,5 @@
 //! ACGS-2 Enhanced Agent Bus - High-Performance Prompt Guard
-//! Constitutional Hash: cdd01ef066bc6cf2
+//! Constitutional Hash: 608508a9bd224290
 //!
 //! Advanced prompt injection detection using multiple detection strategies:
 //! - Aho-Corasick for fast literal pattern matching
@@ -359,6 +359,137 @@ impl PromptGuardStats {
     }
 }
 
+// ---------------------------------------------------------------------------
+// PHI Pattern Detection
+// ---------------------------------------------------------------------------
+
+/// Types of PHI patterns detected.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PhiPatternType {
+    Ssn,
+    Mrn,
+    Dob,
+    Insurance,
+    Clinical,
+}
+
+/// A PHI match — contains only the pattern type and byte offset range.
+/// NEVER stores the matched text itself to prevent PHI leakage.
+#[derive(Debug, Clone)]
+pub struct PhiMatch {
+    pub pattern_type: PhiPatternType,
+    pub byte_start: usize,
+    pub byte_end: usize,
+}
+
+/// Literal PHI keyword patterns for Aho-Corasick matching.
+/// Each entry is (keyword, PhiPatternType).
+static PHI_KEYWORDS: &[(&str, PhiPatternType)] = &[
+    ("ssn", PhiPatternType::Ssn),
+    ("social security", PhiPatternType::Ssn),
+    ("mrn", PhiPatternType::Mrn),
+    ("medical record number", PhiPatternType::Mrn),
+    ("medical record", PhiPatternType::Mrn),
+    ("date of birth", PhiPatternType::Dob),
+    ("dob", PhiPatternType::Dob),
+    ("insurance id", PhiPatternType::Insurance),
+    ("health plan number", PhiPatternType::Insurance),
+    ("policy number", PhiPatternType::Insurance),
+    ("patient name", PhiPatternType::Clinical),
+    ("diagnosis code", PhiPatternType::Clinical),
+    ("icd-10", PhiPatternType::Clinical),
+    ("icd-9", PhiPatternType::Clinical),
+];
+
+/// High-performance PHI detector using Aho-Corasick for keywords
+/// and regex for structured patterns (SSN, MRN, DOB formats).
+pub struct PhiDetector {
+    ac: AhoCorasick,
+    ssn_regex: Regex,
+    mrn_regex: Regex,
+    dob_regex: Regex,
+}
+
+impl PhiDetector {
+    fn new() -> Self {
+        let patterns: Vec<&str> = PHI_KEYWORDS.iter().map(|(kw, _)| *kw).collect();
+        let ac = AhoCorasickBuilder::new()
+            .ascii_case_insensitive(true)
+            .match_kind(MatchKind::LeftmostFirst)
+            .build(&patterns)
+            .expect("Failed to build PHI Aho-Corasick automaton");
+
+        // SSN: 123-45-6789
+        let ssn_regex = Regex::new(r"\d{3}-\d{2}-\d{4}").expect("Failed to build SSN regex");
+        // MRN: common hospital formats like MRN-123456 or MRN: 123456
+        let mrn_regex =
+            Regex::new(r"(?i)MRN[:\-\s]?\s?\d{4,10}").expect("Failed to build MRN regex");
+        // DOB: MM/DD/YYYY or MM-DD-YYYY or YYYY-MM-DD
+        let dob_regex = Regex::new(
+            r"\d{2}[/\-]\d{2}[/\-]\d{4}|\d{4}-\d{2}-\d{2}",
+        )
+        .expect("Failed to build DOB regex");
+
+        Self {
+            ac,
+            ssn_regex,
+            mrn_regex,
+            dob_regex,
+        }
+    }
+}
+
+/// Singleton PHI detector (like existing PROMPT_INJECTION_PATTERNS).
+static PHI_DETECTOR: Lazy<PhiDetector> = Lazy::new(PhiDetector::new);
+
+/// Detect PHI patterns in the given string content.
+/// Returns a Vec of `PhiMatch` with pattern type and byte offsets only — never matched text.
+pub fn detect_phi(content: &str) -> Vec<PhiMatch> {
+    let mut matches = Vec::new();
+
+    // Phase 1: Aho-Corasick keyword scan
+    for mat in PHI_DETECTOR.ac.find_iter(content) {
+        let (_, ptype) = PHI_KEYWORDS[mat.pattern().as_usize()];
+        matches.push(PhiMatch {
+            pattern_type: ptype,
+            byte_start: mat.start(),
+            byte_end: mat.end(),
+        });
+    }
+
+    // Phase 2: Regex structured patterns
+    for mat in PHI_DETECTOR.ssn_regex.find_iter(content) {
+        matches.push(PhiMatch {
+            pattern_type: PhiPatternType::Ssn,
+            byte_start: mat.start(),
+            byte_end: mat.end(),
+        });
+    }
+    for mat in PHI_DETECTOR.mrn_regex.find_iter(content) {
+        matches.push(PhiMatch {
+            pattern_type: PhiPatternType::Mrn,
+            byte_start: mat.start(),
+            byte_end: mat.end(),
+        });
+    }
+    for mat in PHI_DETECTOR.dob_regex.find_iter(content) {
+        matches.push(PhiMatch {
+            pattern_type: PhiPatternType::Dob,
+            byte_start: mat.start(),
+            byte_end: mat.end(),
+        });
+    }
+
+    matches
+}
+
+/// Zero-copy PHI scan over a raw byte buffer.
+/// Falls back to lossy UTF-8 conversion for Aho-Corasick and regex scanning.
+pub fn scan_buffer_for_phi(buffer: &[u8]) -> Vec<PhiMatch> {
+    let content = String::from_utf8_lossy(buffer);
+    detect_phi(&content)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -495,5 +626,124 @@ mod tests {
         assert_eq!(stats.total_scanned, 3);
         assert_eq!(stats.blocked, 1);
         assert_eq!(stats.passed, 2);
+    }
+
+    // -----------------------------------------------------------------------
+    // PHI Detection Tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn test_phi_detect_ssn_keyword() {
+        let matches = detect_phi("Please provide your ssn for verification");
+        assert!(!matches.is_empty());
+        assert!(matches.iter().any(|m| m.pattern_type == PhiPatternType::Ssn));
+    }
+
+    #[test]
+    fn test_phi_detect_ssn_pattern() {
+        let matches = detect_phi("My number is 123-45-6789 thanks");
+        assert!(matches.iter().any(|m| m.pattern_type == PhiPatternType::Ssn));
+        let ssn_match = matches.iter().find(|m| m.byte_start == 13).expect("Unexpected missing SSN match");
+        assert_eq!(ssn_match.byte_end, 24);
+    }
+
+    #[test]
+    fn test_phi_detect_social_security_keyword() {
+        let matches = detect_phi("Enter your social security number");
+        assert!(matches.iter().any(|m| m.pattern_type == PhiPatternType::Ssn));
+    }
+
+    #[test]
+    fn test_phi_detect_mrn_keyword() {
+        let matches = detect_phi("The medical record number is needed");
+        assert!(matches.iter().any(|m| m.pattern_type == PhiPatternType::Mrn));
+    }
+
+    #[test]
+    fn test_phi_detect_mrn_pattern() {
+        let matches = detect_phi("Reference MRN-12345678 for the patient");
+        assert!(matches.iter().any(|m| m.pattern_type == PhiPatternType::Mrn));
+    }
+
+    #[test]
+    fn test_phi_detect_dob_keyword() {
+        let matches = detect_phi("What is your date of birth?");
+        assert!(matches.iter().any(|m| m.pattern_type == PhiPatternType::Dob));
+    }
+
+    #[test]
+    fn test_phi_detect_dob_pattern_slash() {
+        let matches = detect_phi("Born on 01/15/1990 in the city");
+        assert!(matches.iter().any(|m| m.pattern_type == PhiPatternType::Dob));
+    }
+
+    #[test]
+    fn test_phi_detect_dob_pattern_iso() {
+        let matches = detect_phi("Date: 1990-01-15 recorded");
+        assert!(matches.iter().any(|m| m.pattern_type == PhiPatternType::Dob));
+    }
+
+    #[test]
+    fn test_phi_detect_insurance() {
+        let matches = detect_phi("Please provide your insurance id and policy number");
+        let insurance_matches: Vec<_> = matches
+            .iter()
+            .filter(|m| m.pattern_type == PhiPatternType::Insurance)
+            .collect();
+        assert!(insurance_matches.len() >= 2);
+    }
+
+    #[test]
+    fn test_phi_detect_clinical() {
+        let matches = detect_phi("The patient name and diagnosis code ICD-10 A00.0");
+        assert!(matches.iter().any(|m| m.pattern_type == PhiPatternType::Clinical));
+    }
+
+    #[test]
+    fn test_phi_no_match_benign() {
+        let matches = detect_phi("The weather is nice today");
+        assert!(matches.is_empty());
+    }
+
+    #[test]
+    fn test_phi_match_never_contains_text() {
+        let matches = detect_phi("ssn is 123-45-6789");
+        for m in &matches {
+            // PhiMatch has no field for matched text — this is a compile-time guarantee
+            // enforced by the struct definition. We verify offsets are valid.
+            assert!(m.byte_end > m.byte_start);
+        }
+    }
+
+    #[test]
+    fn test_phi_case_insensitive() {
+        let matches = detect_phi("SSN DOB PATIENT NAME");
+        assert!(matches.iter().any(|m| m.pattern_type == PhiPatternType::Ssn));
+        assert!(matches.iter().any(|m| m.pattern_type == PhiPatternType::Dob));
+        assert!(matches.iter().any(|m| m.pattern_type == PhiPatternType::Clinical));
+    }
+
+    #[test]
+    fn test_scan_buffer_for_phi() {
+        let buffer = b"Patient ssn is 123-45-6789";
+        let matches = scan_buffer_for_phi(buffer);
+        assert!(matches.iter().any(|m| m.pattern_type == PhiPatternType::Ssn));
+    }
+
+    #[test]
+    fn test_scan_buffer_empty() {
+        let matches = scan_buffer_for_phi(b"");
+        assert!(matches.is_empty());
+    }
+
+    #[test]
+    fn test_phi_multiple_patterns_single_input() {
+        let input = "SSN: 123-45-6789, DOB: 01/15/1990, MRN-99999, insurance id required";
+        let matches = detect_phi(input);
+        let types: Vec<PhiPatternType> = matches.iter().map(|m| m.pattern_type).collect();
+        assert!(types.contains(&PhiPatternType::Ssn));
+        assert!(types.contains(&PhiPatternType::Dob));
+        assert!(types.contains(&PhiPatternType::Mrn));
+        assert!(types.contains(&PhiPatternType::Insurance));
     }
 }

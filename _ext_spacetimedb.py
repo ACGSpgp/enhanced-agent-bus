@@ -1,5 +1,8 @@
 # Constitutional Hash: 608508a9bd224290
-"""Optional SpacetimeDB Real-Time Governance Integration."""
+"""Optional SpacetimeDB Real-Time Governance Integration.
+
+Not re-exported in ``__init__.py`` — experimental. Import directly if needed.
+"""
 
 try:
     from .persistence.spacetime_client import (

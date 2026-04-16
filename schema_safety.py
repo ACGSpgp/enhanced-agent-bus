@@ -81,7 +81,9 @@ def _sanitize_schema_fragment(schema: Any, *, top_level: bool) -> JSONDict:
 
     if "properties" in sanitized:
         sanitized["type"] = "object"
-        sanitized["required"] = _sanitize_required(required_names, sanitized["properties"], rename_map)
+        sanitized["required"] = _sanitize_required(
+            required_names, sanitized["properties"], rename_map
+        )
         sanitized.setdefault("additionalProperties", False)
     elif sanitized.get("type") == "array":
         sanitized["items"] = _sanitize_schema_fragment(sanitized.get("items", {}), top_level=False)
@@ -91,7 +93,9 @@ def _sanitize_schema_fragment(schema: Any, *, top_level: bool) -> JSONDict:
 
     if sanitized.get("type") == "object":
         sanitized.setdefault("properties", {})
-        sanitized["required"] = _sanitize_required(required_names, sanitized["properties"], rename_map)
+        sanitized["required"] = _sanitize_required(
+            required_names, sanitized["properties"], rename_map
+        )
         sanitized.setdefault("additionalProperties", False)
         return sanitized
 

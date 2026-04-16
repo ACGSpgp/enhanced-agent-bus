@@ -113,6 +113,146 @@ class SandboxExecutionResult:
         }
 
 
+@dataclass
+class ClinicalSandboxProfile:
+    """Clinical sandbox profile for healthcare/life-science workloads.
+
+    Defines security, network, and resource constraints for clinical
+    code execution environments.
+
+    Constitutional Hash: 608508a9bd224290
+    """
+
+    profile_name: str
+    allowed_network_endpoints: list[str] = field(default_factory=list)
+    phi_volume_paths: list[str] = field(default_factory=list)
+    gpu_passthrough: bool = False
+    max_phi_memory_mb: int = 512
+    audit_all_syscalls: bool = False
+    require_fips_crypto: bool = False
+    allowed_outbound_ports: list[int] = field(default_factory=lambda: [443])
+    data_classification: str = "de-identified"
+
+    @classmethod
+    def phi_processing(cls) -> "ClinicalSandboxProfile":
+        """Profile for PHI processing: no network, read-only PHI, audit syscalls, FIPS required."""
+        return cls(
+            profile_name="phi_processing",
+            allowed_network_endpoints=[],
+            phi_volume_paths=[],
+            gpu_passthrough=False,
+            max_phi_memory_mb=512,
+            audit_all_syscalls=True,
+            require_fips_crypto=True,
+            allowed_outbound_ports=[],
+            data_classification="phi",
+        )
+
+    @classmethod
+    def clinical_inference(cls) -> "ClinicalSandboxProfile":
+        """Profile for clinical inference: GPU, FHIR endpoints only, port 443."""
+        return cls(
+            profile_name="clinical_inference",
+            allowed_network_endpoints=["fhir.endpoint.local"],
+            phi_volume_paths=[],
+            gpu_passthrough=True,
+            max_phi_memory_mb=512,
+            audit_all_syscalls=False,
+            require_fips_crypto=False,
+            allowed_outbound_ports=[443],
+            data_classification="phi",
+        )
+
+    @classmethod
+    def research_compute(cls) -> "ClinicalSandboxProfile":
+        """Profile for research compute: GPU, broader endpoints, 2048 MB memory."""
+        return cls(
+            profile_name="research_compute",
+            allowed_network_endpoints=["*"],
+            phi_volume_paths=[],
+            gpu_passthrough=True,
+            max_phi_memory_mb=2048,
+            audit_all_syscalls=False,
+            require_fips_crypto=False,
+            allowed_outbound_ports=[443, 8080],
+            data_classification="de-identified",
+        )
+
+    @classmethod
+    def de_identified(cls) -> "ClinicalSandboxProfile":
+        """Profile for de-identified data: relaxed, standard network, no FIPS."""
+        return cls(
+            profile_name="de_identified",
+            allowed_network_endpoints=["*"],
+            phi_volume_paths=[],
+            gpu_passthrough=False,
+            max_phi_memory_mb=512,
+            audit_all_syscalls=False,
+            require_fips_crypto=False,
+            allowed_outbound_ports=[443, 80, 8080],
+            data_classification="de-identified",
+        )
+
+
+# Minimal syscall set for clinical workloads
+_CLINICAL_BASE_SYSCALLS: list[str] = [
+    "read",
+    "write",
+    "open",
+    "close",
+    "stat",
+    "fstat",
+    "lstat",
+    "mmap",
+    "mprotect",
+    "munmap",
+    "brk",
+    "rt_sigaction",
+    "rt_sigprocmask",
+    "ioctl",
+    "access",
+    "pipe",
+    "select",
+    "sched_yield",
+    "madvise",
+    "nanosleep",
+    "getpid",
+    "clone",
+    "exit",
+    "exit_group",
+    "futex",
+    "set_robust_list",
+    "get_robust_list",
+    "openat",
+    "newfstatat",
+    "readlinkat",
+    "getrandom",
+]
+
+
+def generate_clinical_seccomp_profile(profile: ClinicalSandboxProfile) -> dict[str, object]:
+    """Generate a seccomp profile dict for a clinical sandbox profile.
+
+    Args:
+        profile: Clinical sandbox profile to generate seccomp rules for.
+
+    Returns:
+        Seccomp profile dictionary suitable for Docker's --security-opt.
+    """
+    action = "SCMP_ACT_LOG" if profile.audit_all_syscalls else "SCMP_ACT_ALLOW"
+
+    syscalls_entry: dict[str, object] = {
+        "names": list(_CLINICAL_BASE_SYSCALLS),
+        "action": action,
+    }
+
+    return {
+        "defaultAction": "SCMP_ACT_ERRNO",
+        "architectures": ["SCMP_ARCH_X86_64", "SCMP_ARCH_AARCH64"],
+        "syscalls": [syscalls_entry],
+    }
+
+
 class SandboxProvider(ABC):
     """Abstract base class for sandbox providers.
 
@@ -645,6 +785,156 @@ if __name__ == "__main__":
                     ValueError,
                 ) as cleanup_error:
                     logger.warning(f"Failed to cleanup container {container_id}: {cleanup_error}")
+
+    async def execute_clinical(
+        self,
+        profile: ClinicalSandboxProfile,
+        request: SandboxExecutionRequest,
+    ) -> SandboxExecutionResult:
+        """Execute code in a Docker container with clinical sandbox constraints.
+
+        Args:
+            profile: Clinical sandbox profile defining security constraints.
+            request: Execution request with code, data, and config.
+
+        Returns:
+            SandboxExecutionResult with execution output.
+        """
+        if not self._initialized or not self._client:
+            return SandboxExecutionResult(
+                success=False,
+                error_message="Docker provider not initialized",
+                trace_id=request.trace_id,
+            )
+
+        container_name = f"{self.container_prefix}-clinical-{request.compute_hash()}"
+        start_time = time.time()
+
+        try:
+            with tempfile.TemporaryDirectory(prefix="acgs2-clinical-") as temp_dir:
+                temp_path = Path(temp_dir)
+
+                input_file = temp_path / "input.json"
+                input_file.write_text(json.dumps(request.data, indent=2))
+
+                validated_code = self._validate_and_freeze_sandbox_code(request.code)
+                script_file = temp_path / "execute.py"
+                script_content = self._generate_execution_script(request, validated_code)
+                script_file.write_text(script_content)
+
+                # Generate seccomp profile
+                seccomp = generate_clinical_seccomp_profile(profile)
+                seccomp_file = temp_path / "seccomp.json"
+                seccomp_file.write_text(json.dumps(seccomp, indent=2))
+
+                # Build clinical container config
+                config = self._build_clinical_container_config(
+                    profile, request, temp_dir, container_name, str(seccomp_file)
+                )
+
+                loop = asyncio.get_running_loop()
+                result = await loop.run_in_executor(None, self._run_container_sync, config)
+
+                execution_time = (time.time() - start_time) * 1000
+                result.execution_time_ms = execution_time
+                result.trace_id = request.trace_id
+
+                return result
+
+        except TimeoutError:
+            return SandboxExecutionResult(
+                success=False,
+                error_message=f"Execution timed out after {request.resource_limits.timeout_seconds}s",
+                container_id=container_name,
+                trace_id=request.trace_id,
+                execution_time_ms=request.resource_limits.timeout_seconds * 1000,
+            )
+
+        except (AttributeError, OSError, RuntimeError, TypeError, ValueError) as e:
+            logger.error(f"Clinical Docker execution error: {e}")
+            return SandboxExecutionResult(
+                success=False,
+                error_message=str(e),
+                container_id=container_name,
+                trace_id=request.trace_id,
+                execution_time_ms=(time.time() - start_time) * 1000,
+            )
+
+    def _build_clinical_container_config(
+        self,
+        profile: ClinicalSandboxProfile,
+        request: SandboxExecutionRequest,
+        host_temp_dir: str,
+        container_name: str,
+        seccomp_path: str,
+    ) -> dict[str, object]:
+        """Build Docker container configuration from a clinical sandbox profile.
+
+        Args:
+            profile: Clinical sandbox profile.
+            request: Execution request.
+            host_temp_dir: Temporary directory on host for volume mounting.
+            container_name: Name for the container.
+            seccomp_path: Path to the generated seccomp profile JSON file.
+
+        Returns:
+            Dictionary with container configuration.
+        """
+        # Network mode: no network for profiles with no endpoints
+        network_disabled = len(profile.allowed_network_endpoints) == 0
+        network_mode = "none" if network_disabled else "bridge"
+
+        # Security options
+        security_opt = [
+            f"seccomp={seccomp_path}",
+            "no-new-privileges:true",
+        ]
+
+        # Volumes: working dir + PHI volumes (always read-only with noexec)
+        volumes: dict[str, dict[str, str]] = {
+            host_temp_dir: {
+                "bind": request.working_dir,
+                "mode": "rw",
+            }
+        }
+        for phi_path in profile.phi_volume_paths:
+            volumes[phi_path] = {
+                "bind": phi_path,
+                "mode": "ro,noexec",
+            }
+
+        config: dict[str, object] = {
+            "image": request.image or self.default_image,
+            "name": container_name,
+            "command": ["python3", f"{request.working_dir}/execute.py"],
+            "working_dir": request.working_dir,
+            "environment": {
+                **request.env_vars,
+                "DATA_CLASSIFICATION": profile.data_classification,
+                "FIPS_REQUIRED": str(profile.require_fips_crypto).lower(),
+            },
+            "user": "1000:1000",
+            "detach": True,
+            "auto_remove": False,
+            "mem_limit": f"{profile.max_phi_memory_mb}m",
+            "nano_cpus": int(request.resource_limits.cpu_limit * 1e9),
+            "network_mode": network_mode,
+            "read_only": True,
+            "cap_drop": ["ALL"],
+            "security_opt": security_opt,
+            "tmpfs": {
+                "/tmp": "noexec,nosuid,size=100m",  # nosec B108 — container sandbox tmpfs
+            },
+            "volumes": volumes,
+        }
+
+        # GPU passthrough
+        if profile.gpu_passthrough:
+            config["device_requests"] = [
+                {"Driver": "nvidia", "Count": -1, "Capabilities": [["gpu"]]}
+            ]
+
+        return config
 
     async def cleanup(self) -> None:
         """Clean up all running containers."""

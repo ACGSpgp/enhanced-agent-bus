@@ -162,9 +162,7 @@ class MessageHandler:
     async def route_and_deliver(self, msg: AgentMessage) -> bool:
         """Route and deliver message via router component."""
         success = bool(
-            await self._router_component.route_and_deliver(
-                msg, self._registry_manager._registry
-            )
+            await self._router_component.route_and_deliver(msg, self._registry_manager._registry)
         )
         if success and not self._kafka_bus:
             await self._message_queue.put(msg)

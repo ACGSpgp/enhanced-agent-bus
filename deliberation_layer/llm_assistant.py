@@ -23,6 +23,7 @@ try:
         get_enum_value as _GetEnumValueImport,
     )
     from enhanced_agent_bus.utils import get_iso_timestamp as _GetIsoTimestampImport
+
     _ConstitutionalHash: Any = _ConstitutionalHashImport
     _AgentMessage: Any = _AgentMessageImport
     _MessageType: Any = _MessageTypeImport
@@ -43,6 +44,7 @@ except ImportError:
             get_enum_value as _GetEnumValueImport,
         )
         from ..utils import get_iso_timestamp as _GetIsoTimestampImport
+
         _ConstitutionalHash = _ConstitutionalHashImport
         _AgentMessage = _AgentMessageImport
         _MessageType = _MessageTypeImport
@@ -61,6 +63,7 @@ except ImportError:
 
             return datetime.now(UTC).isoformat()
 
+
 CONSTITUTIONAL_HASH = _ConstitutionalHash
 AgentMessage = _AgentMessage
 MessageType = _MessageType
@@ -76,6 +79,7 @@ class _AgentMessageLike(Protocol):
     content: object
     payload: object
 
+
 logger = get_logger(__name__)
 _LLM_ASSISTANT_OPERATION_ERRORS = (
     RuntimeError,
@@ -87,6 +91,7 @@ _LLM_ASSISTANT_OPERATION_ERRORS = (
     TimeoutError,
     ConnectionError,
 )
+
 
 def _load_metrics_registry() -> Any | None:
     try:

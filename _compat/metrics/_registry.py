@@ -48,9 +48,7 @@ else:
             def __exit__(self, *args: Any) -> None:
                 pass
 
-        def _get_or_create_counter(
-            name: str, description: str, labels: list[str]
-        ) -> _NoOpCounter:
+        def _get_or_create_counter(name: str, description: str, labels: list[str]) -> _NoOpCounter:
             del name, description, labels
             return _NoOpCounter()
 

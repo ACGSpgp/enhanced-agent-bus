@@ -73,9 +73,7 @@ class _SpanProtocol(Protocol):
 
 
 class _TracerProtocol(Protocol):
-    def start_span(
-        self, name: str, attributes: JSONDict | None = None
-    ) -> _SpanProtocol: ...
+    def start_span(self, name: str, attributes: JSONDict | None = None) -> _SpanProtocol: ...
 
 
 WorkflowCallable: TypeAlias = Callable[["WorkflowContext"], Awaitable[object]]
@@ -625,9 +623,7 @@ class DurableWorkflowExecutor:
                 )
 
                 result = (
-                    await asyncio.wait_for(
-                        activity(context, input_data or {}), timeout=timeout
-                    )
+                    await asyncio.wait_for(activity(context, input_data or {}), timeout=timeout)
                     if timeout
                     else await activity(context, input_data or {})
                 )
@@ -674,7 +670,9 @@ class DurableWorkflowExecutor:
                 continue
 
             try:
-                tracer_instance = cast(_TracerProtocol | None, tracer) if _TELEMETRY_AVAILABLE else None
+                tracer_instance = (
+                    cast(_TracerProtocol | None, tracer) if _TELEMETRY_AVAILABLE else None
+                )
                 if tracer_instance is not None:
                     comp_span = tracer_instance.start_span(
                         f"Compensation: {comp.compensation_name}",

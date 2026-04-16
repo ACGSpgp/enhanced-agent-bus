@@ -1,4 +1,5 @@
 """Governance proposal lifecycle: SuggestedRule → Polis → NMC → deployment."""
+
 from __future__ import annotations
 
 import uuid
@@ -12,12 +13,12 @@ if TYPE_CHECKING:
 
 
 class ProposalStatus(StrEnum):
-    PENDING = "pending"                     # Awaiting Polis vote
-    DELIBERATING = "deliberating"           # Polis vote in progress
-    CONSENSUS_REACHED = "consensus_reached" # NMC consensus done
-    APPROVED = "approved"                   # Above threshold, ready to deploy
-    REJECTED = "rejected"                   # Below threshold, dropped
-    DEPLOYED = "deployed"                   # Rule live in constitution
+    PENDING = "pending"  # Awaiting Polis vote
+    DELIBERATING = "deliberating"  # Polis vote in progress
+    CONSENSUS_REACHED = "consensus_reached"  # NMC consensus done
+    APPROVED = "approved"  # Above threshold, ready to deploy
+    REJECTED = "rejected"  # Below threshold, dropped
+    DEPLOYED = "deployed"  # Rule live in constitution
 
 
 @dataclass

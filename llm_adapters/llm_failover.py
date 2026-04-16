@@ -972,9 +972,7 @@ class RequestHedgingManager:
             tasks.append(task)
         return tasks
 
-    async def _wait_for_first_success(
-        self, tasks: list[asyncio.Task[Any]]
-    ) -> tuple[str, object]:
+    async def _wait_for_first_success(self, tasks: list[asyncio.Task[Any]]) -> tuple[str, object]:
         """Wait for the first successful task result."""
         done: set[asyncio.Task[Any]] = set()
         pending: set[asyncio.Task[Any]] = set(tasks)

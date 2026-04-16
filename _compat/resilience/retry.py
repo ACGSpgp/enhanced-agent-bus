@@ -66,4 +66,5 @@ else:
             """Stub: calls fn once without retries."""
             return await fn(*args, **kwargs)
 
+
 __all__ = ["RetryConfig", "retry", "retry_async"]

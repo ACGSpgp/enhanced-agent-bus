@@ -139,6 +139,13 @@ METRICS_ENABLED: bool = _feature_flags.get("METRICS_ENABLED", False)
 USE_RUST: bool = _feature_flags.get("USE_RUST", False)
 del _feature_flags
 
+# ── Extension modules by architectural layer ─────────────────────────────
+# Bus core: circuit breaker
+# Governance: chaos testing, decision store, explanations, PQC
+# Runtime infra: cache warming, context memory/optimization, perf, persistence, response quality
+# Ecosystem: cognitive, LangGraph, MCP
+# Experimental (NOT re-exported): _ext_browser_tool, _ext_cognee, _ext_spacetimedb
+
 from ._ext_cache_warming import *
 from ._ext_cache_warming import _EXT_ALL as _CW_ALL
 from ._ext_chaos import *
@@ -151,8 +158,6 @@ from ._ext_cognitive import *
 from ._ext_cognitive import _EXT_ALL as _COG_ALL
 from ._ext_context_memory import *
 from ._ext_context_memory import _EXT_ALL as _CM_ALL
-
-# Phase 4: Context Window Optimization
 from ._ext_context_optimization import *
 from ._ext_context_optimization import _EXT_ALL as _CTX_ALL
 from ._ext_decision_store import *
@@ -163,8 +168,6 @@ from ._ext_langgraph import *
 from ._ext_langgraph import _EXT_ALL as _LG_ALL
 from ._ext_mcp import *
 from ._ext_mcp import _EXT_ALL as _MCP_ALL
-
-# Phase 6: Performance Optimization
 from ._ext_performance import *
 from ._ext_performance import _EXT_ALL as _PERF_ALL
 from ._ext_persistence import *

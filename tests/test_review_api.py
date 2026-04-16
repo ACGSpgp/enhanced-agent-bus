@@ -218,6 +218,8 @@ async def test_health_check():
 
 @pytest.mark.asyncio
 async def test_create_review_dependencies_routes_signing_provider():
+    from unittest.mock import patch
+
     import enhanced_agent_bus.constitutional.review_api as review_api_module
 
     provider = HsmSigningProvider(secret=b"review-secret", key_id="review-hsm")
@@ -232,10 +234,11 @@ async def test_create_review_dependencies_routes_signing_provider():
         def __init__(self, *args: object, **kwargs: object) -> None:
             captured["config"] = kwargs.get("config")
 
-    with _review_api_patch("ConstitutionalStorageService", MagicMock(return_value=mock_storage)):
-        with _review_api_patch("resolve_signing_provider", lambda: provider):
-            with _review_api_patch("AuditClientConfig", DummyAuditClientConfig):
-                with _review_api_patch("AuditClient", DummyAuditClient):
+    _base = "enhanced_agent_bus.constitutional.review_api"
+    with patch(f"{_base}.ConstitutionalStorageService", MagicMock(return_value=mock_storage)):
+        with patch(f"{_base}.resolve_signing_provider", lambda: provider):
+            with patch(f"{_base}.AuditClientConfig", DummyAuditClientConfig):
+                with patch(f"{_base}.AuditClient", DummyAuditClient):
                     deps = await review_api_module._create_review_dependencies()
 
     assert captured["signing_provider"] is provider

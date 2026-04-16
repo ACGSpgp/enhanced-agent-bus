@@ -56,10 +56,12 @@ from .polis_engine import PolisDeliberationEngine
 _ManifoldHC: Any = None
 try:
     from .stability.mhc import ManifoldHC as _ImportedManifoldHC
+
     _ManifoldHC = _ImportedManifoldHC
 except (ImportError, ValueError):
     try:
         from stability.mhc import ManifoldHC as _FallbackManifoldHC
+
         _ManifoldHC = _FallbackManifoldHC
     except ImportError:
         pass
