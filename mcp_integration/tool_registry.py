@@ -46,7 +46,13 @@ try:
     )
 
     OBSERVATION_LOGGING_AVAILABLE = True
-except ImportError:
+except Exception as _obs_import_err:
+    import sys as _sys
+
+    print(
+        f"OBSERVATION_IMPORT_FAILED: {type(_obs_import_err).__name__}: {_obs_import_err}",
+        file=_sys.stderr,
+    )
     OBSERVATION_LOGGING_AVAILABLE = False
 
     def extract_file_paths(*payloads: Any) -> list[str]:
