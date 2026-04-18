@@ -366,6 +366,47 @@ class TestExecuteTool:
         assert observations[0]["duration_ms"] >= 0
 
     @pytest.mark.asyncio
+    async def test_execute_success_records_observation_with_empty_helper(self, monkeypatch):
+        observations = []
+
+        def _record(**kwargs):
+            observations.append(kwargs)
+
+        monkeypatch.setattr(tool_registry_module, "record_observation", _record, raising=False)
+        monkeypatch.setattr(
+            tool_registry_module,
+            "OBSERVATION_LOGGING_AVAILABLE",
+            True,
+            raising=False,
+        )
+        monkeypatch.setattr(
+            tool_registry_module,
+            "extract_file_paths",
+            lambda *args: [],
+            raising=False,
+        )
+
+        handler = AsyncMock(return_value={"output_path": "dist/output.json"})
+        tool = _make_tool(handler=handler)
+        registry = MCPToolRegistry()
+        ctx = ToolExecutionContext(
+            tool=tool,
+            arguments={"path": "src/input.py", "files": ["tests/test_input.py"]},
+            agent_id="a",
+            session_id="sess-1",
+        )
+
+        result = await registry.execute_tool(ctx)
+
+        assert result.success is True
+        assert len(observations) == 1
+        assert observations[0]["file_paths"] == [
+            "src/input.py",
+            "tests/test_input.py",
+            "dist/output.json",
+        ]
+
+    @pytest.mark.asyncio
     async def test_execute_failure_records_observation_error_type(self, monkeypatch):
         observations = []
 
