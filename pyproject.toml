@@ -61,6 +61,8 @@ ml = [
     "river>=0.21.0",
     "scikit-learn>=1.4.0",
     "pandas>=2.1.0",
+    "onnxruntime>=1.17",
+    "tokenizers>=0.15",
 ]
 pqc = [
     # Post-Quantum Cryptography (NIST PQC standards)

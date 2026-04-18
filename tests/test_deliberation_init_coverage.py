@@ -421,8 +421,11 @@ class TestDeliberationEdgeCases:
         """Test __all__ list has expected exports."""
         import deliberation_layer
 
-        # Updated count to match current exports (includes multi_approver)
-        assert len(deliberation_layer.__all__) == 21
+        # Updated count to match current exports (FJA + fFJA symbols).
+        # fFJA (ADR: federated t-of-N threshold FJA) adds 5 exports:
+        # FederatedJudgeAnchor, FederatedQuorumResult, JudgeMember,
+        # JudgeSignature, verify_federated_result.
+        assert len(deliberation_layer.__all__) == 32
 
 
 # =============================================================================

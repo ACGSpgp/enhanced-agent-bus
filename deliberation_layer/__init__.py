@@ -15,6 +15,21 @@ from typing import Any, cast
 
 from . import integration, multi_approver
 from .deliberation_queue import DeliberationQueue, DeliberationTask
+from .federated_judge_anchor import (
+    FederatedJudgeAnchor,
+    FederatedQuorumResult,
+    JudgeMember,
+    JudgeSignature,
+    verify_federated_result,
+)
+from .frozen_judge_anchor import (
+    FJACandidate,
+    FJADecisionReason,
+    FJAQuorumResult,
+    FrozenJudgeAnchorProtocol,
+    FrozenJudgeQuorum,
+    InMemoryFrozenJudgeAnchor,
+)
 from .graphrag_integration import GraphRAGContextEnricher
 from .redis_integration import (
     REDIS_AVAILABLE,
@@ -78,6 +93,19 @@ __all__ = [
     "DeliberationTask",
     "Election",
     "EventDrivenVoteCollector",
+    # Federated Judge Anchor (fFJA) — t-of-N threshold extension
+    "FederatedJudgeAnchor",
+    "FederatedQuorumResult",
+    "JudgeMember",
+    "JudgeSignature",
+    "verify_federated_result",
+    # Frozen Judge Anchor
+    "FJACandidate",
+    "FJADecisionReason",
+    "FJAQuorumResult",
+    "FrozenJudgeAnchorProtocol",
+    "FrozenJudgeQuorum",
+    "InMemoryFrozenJudgeAnchor",
     # Impact Scorer (lazy loaded)
     "ImpactScorer",
     "RedisDeliberationQueue",
