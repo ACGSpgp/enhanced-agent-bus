@@ -14,8 +14,10 @@ Key Features:
 
 import asyncio
 import hashlib
+import math
 import time
-from collections import OrderedDict
+from bisect import bisect_left, insort
+from collections import OrderedDict, deque
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
@@ -183,7 +185,13 @@ class ConstitutionalContextCache:
         self._stats = CacheStats(constitutional_hash=constitutional_hash)
 
         # Latency tracking
-        self._latencies: list[float] = []
+        # `_latencies` is a FIFO window (popleft on eviction, O(1)). `_sorted_latencies`
+        # mirrors it in sorted order for O(log n) P99 reads. `_latency_total` is a running
+        # sum for O(1) average. If the mirror ever drifts out of sync, `_record_latency`
+        # repairs it from `_latencies` as the source of truth.
+        self._latencies: deque[float] = deque()
+        self._sorted_latencies: list[float] = []
+        self._latency_total = 0.0
         self._latency_window_size = 1000
 
         # Cache key prefix
@@ -505,17 +513,39 @@ class ConstitutionalContextCache:
         """Record latency for P99 calculation."""
         latency_ms = (time.perf_counter() - start_time) * 1000
         self._latencies.append(latency_ms)
+        insort(self._sorted_latencies, latency_ms)
+        self._latency_total += latency_ms
 
-        # Keep window bounded
-        if len(self._latencies) > self._latency_window_size:
-            self._latencies = self._latencies[-self._latency_window_size :]
+        # Keep window bounded. `_latencies` is the source of truth; `_sorted_latencies`
+        # must stay in lockstep. If the bisect lookup fails to find the evicted value
+        # (NaN, invariant break), repair the mirror and the running sum from
+        # `_latencies` rather than silently diverging — a desynced mirror would
+        # permanently corrupt P99 and average.
+        while len(self._latencies) > self._latency_window_size:
+            removed = self._latencies.popleft()
+            self._latency_total -= removed
+            sorted_idx = bisect_left(self._sorted_latencies, removed)
+            if (
+                sorted_idx < len(self._sorted_latencies)
+                and self._sorted_latencies[sorted_idx] == removed
+            ):
+                self._sorted_latencies.pop(sorted_idx)
+            else:
+                logger.error(
+                    f"Latency mirror desynced (evicted={removed}, "
+                    f"window={len(self._latencies)}); rebuilding from source of truth"
+                )
+                self._sorted_latencies = sorted(self._latencies)
+                self._latency_total = math.fsum(self._latencies)
 
-        # Update stats
-        if self._latencies:
-            sorted_latencies = sorted(self._latencies)
-            p99_idx = int(len(sorted_latencies) * 0.99)
-            self._stats.p99_latency_ms = sorted_latencies[min(p99_idx, len(sorted_latencies) - 1)]
-            self._stats.average_latency_ms = sum(self._latencies) / len(self._latencies)
+        # Update stats. Use nearest-rank P99 (ceil(0.99 * n) - 1) so P99 is the 99th
+        # percentile value, not the max. `int(n * 0.99)` would bias one rank high
+        # (e.g. for n=1000 it selects the 991st value instead of the 990th).
+        n = len(self._latencies)
+        if n:
+            p99_idx = max(0, math.ceil(0.99 * n) - 1)
+            self._stats.p99_latency_ms = self._sorted_latencies[p99_idx]
+            self._stats.average_latency_ms = self._latency_total / n
 
     def clear(self) -> int:
         """Clear all caches.

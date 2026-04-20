@@ -26,7 +26,6 @@ class BatchRequestQueue:
         self.enable_deduplication = enable_deduplication
         self.max_cache_size = max_cache_size
         self._dedup_cache: dict[str, int] = {}
-        self._seen_hashes: set[str] = set()
 
     def deduplicate_requests(
         self, batch_request: BatchRequest
@@ -72,7 +71,6 @@ class BatchRequestQueue:
 
     def clear_cache(self) -> None:
         self._dedup_cache.clear()
-        self._seen_hashes.clear()
 
     def get_cache_size(self) -> int:
         return len(self._dedup_cache)
