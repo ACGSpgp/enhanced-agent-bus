@@ -16,6 +16,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, TypeAlias, cast
 
 # Import centralized constitutional hash
@@ -86,6 +87,92 @@ TOOL_EXECUTION_ERRORS = (
     OSError,
     asyncio.TimeoutError,
 )
+
+_OBSERVATION_PATH_KEYS = frozenset(
+    {
+        "path",
+        "paths",
+        "file",
+        "files",
+        "filepath",
+        "filepaths",
+        "file_path",
+        "file_paths",
+        "input_file",
+        "input_files",
+        "output_file",
+        "output_files",
+        "input_path",
+        "input_paths",
+        "output_path",
+        "output_paths",
+        "target_path",
+        "target_paths",
+        "source_path",
+        "source_paths",
+        "destination_path",
+        "destination_paths",
+        "artifact_path",
+        "artifact_paths",
+        "cwd",
+        "directory",
+        "directories",
+        "dir",
+        "root",
+        "root_dir",
+    }
+)
+
+
+def _extract_observation_file_paths(*payloads: Any) -> list[str]:
+    """Extract file paths even when the shared helper is missing or too weak."""
+
+    discovered: list[str] = []
+    seen: set[str] = set()
+
+    def _add_path(value: str | Path) -> None:
+        path = str(value)
+        if not path or path in seen:
+            return
+        seen.add(path)
+        discovered.append(path)
+
+    def _consume_path_value(value: Any) -> None:
+        if isinstance(value, (str, Path)):
+            _add_path(value)
+            return
+        if isinstance(value, dict):
+            for nested in value.values():
+                _consume_path_value(nested)
+            return
+        if isinstance(value, (list, tuple, set)):
+            for item in value:
+                _consume_path_value(item)
+
+    def _walk(value: Any) -> None:
+        if isinstance(value, dict):
+            for key, nested in value.items():
+                if str(key).lower() in _OBSERVATION_PATH_KEYS:
+                    _consume_path_value(nested)
+                else:
+                    _walk(nested)
+            return
+        if isinstance(value, (list, tuple, set)):
+            for item in value:
+                _walk(item)
+
+    try:
+        helper_paths = extract_file_paths(*payloads)
+    except Exception:
+        helper_paths = []
+
+    for value in helper_paths:
+        _add_path(value)
+
+    for payload in payloads:
+        _walk(payload)
+
+    return discovered
 
 
 class MCPValidatorProtocol(Protocol):
@@ -786,7 +873,11 @@ class MCPToolRegistry:
                 success=success,
                 error_type=error_type,
                 error_message=error_message,
-                file_paths=extract_file_paths(context.arguments, result, context.metadata),
+                file_paths=_extract_observation_file_paths(
+                    context.arguments,
+                    result,
+                    context.metadata,
+                ),
                 session_id=context.session_id,
                 metadata={
                     "tool_id": context.tool.tool_id,
