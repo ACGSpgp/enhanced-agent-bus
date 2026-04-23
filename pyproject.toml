@@ -260,7 +260,28 @@ no_implicit_optional = true
 # Grandfathered modules with pre-existing untyped defs — fix incrementally.
 [[tool.mypy.overrides]]
 module = [
-    "enhanced_agent_bus._ext_*",
+    # _ext_pqc and _ext_decision_store graduated to strict mypy (US-004).
+    # Remaining _ext_* modules are still untyped; enumerate explicitly so
+    # mypy pattern validation succeeds (glob "_ext_*" was invalid).
+    "enhanced_agent_bus._ext_browser_tool",
+    "enhanced_agent_bus._ext_cache_warming",
+    "enhanced_agent_bus._ext_chaos",
+    "enhanced_agent_bus._ext_circuit_breaker",
+    "enhanced_agent_bus._ext_circuit_breaker_clients",
+    "enhanced_agent_bus._ext_cognee",
+    "enhanced_agent_bus._ext_cognitive",
+    "enhanced_agent_bus._ext_context_memory",
+    "enhanced_agent_bus._ext_context_optimization",
+    "enhanced_agent_bus._ext_explanation_service",
+    "enhanced_agent_bus._ext_langgraph",
+    "enhanced_agent_bus._ext_mcp",
+    "enhanced_agent_bus._ext_performance",
+    "enhanced_agent_bus._ext_persistence",
+    "enhanced_agent_bus._ext_response_quality",
+    "enhanced_agent_bus._ext_spacetimedb",
+    # deliberation_layer remains grandfathered: integration.py + workflow
+    # files still have pre-existing untyped defs that are out of scope for
+    # this audit (Gate 4 pre-flight ~500 errors; incremental fix separate).
     "enhanced_agent_bus.deliberation_layer.*",
     "enhanced_agent_bus.enterprise_sso.*",
     "enhanced_agent_bus.cognitive.*",
