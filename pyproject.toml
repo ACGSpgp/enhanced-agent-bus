@@ -262,7 +262,6 @@ no_implicit_optional = true
 module = [
     "enhanced_agent_bus._ext_*",
     "enhanced_agent_bus.deliberation_layer.*",
-    "enhanced_agent_bus.llm_adapters.*",
     "enhanced_agent_bus.enterprise_sso.*",
     "enhanced_agent_bus.cognitive.*",
     "enhanced_agent_bus.ai_assistant.*",
