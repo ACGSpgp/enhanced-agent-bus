@@ -7,7 +7,7 @@
       "id": "US-001",
       "title": "Cat 1: Add test coverage for 5 zero-test subsystems",
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "acceptanceCriteria": [
         "tests/test__compat_coverage.py exists and all tests pass",
         "tests/test_adaptive_governance_coverage.py exists and all tests pass",
@@ -48,7 +48,7 @@
       "id": "US-004",
       "title": "Cat 2: Lift 3 grandfathered mypy overrides",
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "acceptanceCriteria": [
         "_ext_pqc.py has type annotations on all public functions (TYPE_CHECKING-guarded stubs with # type: ignore[assignment] where needed)",
         "_ext_decision_store.py has type annotations on all public functions",
@@ -62,7 +62,7 @@
       "id": "US-005",
       "title": "Cat 3: Harden fallback_stubs.py slowapi",
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "acceptanceCriteria": [
         "StubLimiter.__init__ in fallback_stubs.py calls require_dependency('slowapi', available=False) when IS_PRODUCTION is True",
         "tests/test_fallback_stubs_production.py exists with test that uses monkeypatch.setattr(fs, 'IS_PRODUCTION', True) + fs.StubLimiter() + pytest.raises(DependencyNotAvailableError)",
@@ -73,7 +73,7 @@
       "id": "US-006",
       "title": "Cat 4: Extension registry entries for all 18 _ext_* modules",
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "acceptanceCriteria": [
         "plugin_registry.py registers all 18 _ext_* modules using find_spec() (not import_module)",
         "Each entry has a name, module path, and availability check via find_spec",
@@ -85,7 +85,7 @@
       "id": "US-007",
       "title": "Cat 5: Split message_processor.py into message_processor/ package",
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "acceptanceCriteria": [
         "git tag pre-cat5-split created as rollback checkpoint before starting",
         "message_processor.py (file) DELETED",
@@ -100,7 +100,7 @@
       "id": "US-008",
       "title": "Cat 6: Split routes/tenants.py into routes/tenants/ package",
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "acceptanceCriteria": [
         "git tag pre-cat6-split created as rollback checkpoint before starting",
         "OpenAPI schema snapshot saved to /tmp/pre_split_schema.json before starting",
