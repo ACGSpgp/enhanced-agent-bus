@@ -5,7 +5,11 @@ from __future__ import annotations
 from typing import Any
 
 from ._registry import *  # noqa: F403
-from ._registry import _get_or_create_counter, _get_or_create_gauge, _get_or_create_histogram
+from ._registry import (  # type: ignore[attr-defined]
+    _get_or_create_counter,
+    _get_or_create_gauge,
+    _get_or_create_histogram,
+)
 
 try:
     from src.core.shared.metrics import *  # noqa: F403
