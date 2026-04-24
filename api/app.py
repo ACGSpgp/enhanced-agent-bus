@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+# ruff: noqa: I001 — import order is load-bearing: message_processor must
+# precede persistence.executor/repository so it resolves the persistence
+# circular-import chain (see block comment below).
+
 """ACGS-2 Enhanced Agent Bus API Application.
 
 Constitutional Hash: 608508a9bd224290
@@ -43,6 +47,12 @@ from ..api_exceptions import (
     policy_error_handler,
     rate_limit_exceeded_handler,
 )
+
+# message_processor must load FIRST: it is the only guard that pre-loads
+# persistence.repository to resolve the circular import chain
+# persistence/__init__.py -> executor -> models -> data_flywheel
+# -> dataset_builder -> persistence.repository -> models.
+# Reordering this block breaks startup (cold import regresses ~1500ms).
 from ..message_processor import MessageProcessor
 from ..maci_enforcement import MACIEnforcer, MACIRoleRegistry
 from ..persistence.executor import DurableWorkflowExecutor, WorkflowContext
@@ -50,6 +60,7 @@ from ..persistence.repository import InMemoryWorkflowRepository
 
 if TYPE_CHECKING:
     from ..batch_processor import BatchMessageProcessor
+    from ..persistence.postgres_repository import PostgresWorkflowRepository
 from .config import (
     API_VERSION,
     BATCH_PROCESSOR_ITEM_TIMEOUT_SECONDS,
@@ -376,8 +387,8 @@ def _bind_runtime_state(app: FastAPI, *, bus: MessageProcessor | dict[str, Any])
 
 def _configure_in_memory_governance_state(application: FastAPI) -> None:
     """Wire development/test-only in-memory governance backends."""
-    from .routes.governance import InMemoryPQCConfigBackend, MACIRecordStore
     from ..pqc_enforcement_config import EnforcementModeConfigService
+    from .routes.governance import InMemoryPQCConfigBackend, MACIRecordStore
 
     application.state.governance_redis_client = None
     application.state.maci_record_store = MACIRecordStore()
@@ -397,8 +408,8 @@ def _configure_shared_governance_state(
     redis_client: Any,
 ) -> None:
     """Wire shared Redis-backed governance backends."""
-    from .routes.governance import RedisMACIRecordStore, RedisMACIRoleRegistry
     from ..pqc_enforcement_config import EnforcementModeConfigService
+    from .routes.governance import RedisMACIRecordStore, RedisMACIRoleRegistry
 
     registry = RedisMACIRoleRegistry(redis_client=redis_client)
     application.state.governance_redis_client = redis_client
@@ -636,7 +647,7 @@ if __name__ == "__main__":
     )
 
 
-__all__ = [
+__all__ = [  # noqa: F822 — "app" provided lazily via module __getattr__ (PEP 562)
     "agent_bus",
     "app",
     "batch_processor",
