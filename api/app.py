@@ -50,7 +50,6 @@ from ..persistence.repository import InMemoryWorkflowRepository
 
 if TYPE_CHECKING:
     from ..batch_processor import BatchMessageProcessor
-from ..pqc_enforcement_config import EnforcementModeConfigService
 from .config import (
     API_VERSION,
     BATCH_PROCESSOR_ITEM_TIMEOUT_SECONDS,
@@ -123,9 +122,6 @@ def _load_sessions_module() -> Any | None:
     except ImportError:
         return None
 
-
-visual_studio_router = _load_visual_studio_router()
-copilot_router = _load_copilot_router()
 
 # pybreaker is a required dependency — always available
 CIRCUIT_BREAKER_AVAILABLE = True
@@ -381,6 +377,7 @@ def _bind_runtime_state(app: FastAPI, *, bus: MessageProcessor | dict[str, Any])
 def _configure_in_memory_governance_state(application: FastAPI) -> None:
     """Wire development/test-only in-memory governance backends."""
     from .routes.governance import InMemoryPQCConfigBackend, MACIRecordStore
+    from ..pqc_enforcement_config import EnforcementModeConfigService
 
     application.state.governance_redis_client = None
     application.state.maci_record_store = MACIRecordStore()
@@ -401,6 +398,7 @@ def _configure_shared_governance_state(
 ) -> None:
     """Wire shared Redis-backed governance backends."""
     from .routes.governance import RedisMACIRecordStore, RedisMACIRoleRegistry
+    from ..pqc_enforcement_config import EnforcementModeConfigService
 
     registry = RedisMACIRoleRegistry(redis_client=redis_client)
     application.state.governance_redis_client = redis_client
@@ -449,6 +447,8 @@ def _attach_pqc_postgres_fallback(
     repository: Any,
 ) -> None:
     """Attach PostgreSQL fallback storage to the shared PQC service when available."""
+    from ..pqc_enforcement_config import EnforcementModeConfigService
+
     service = getattr(application.state, "pqc_enforcement_service", None)
     if not isinstance(service, EnforcementModeConfigService):
         return
@@ -503,12 +503,12 @@ def _register_core_routers(application: FastAPI) -> None:
 
 def _register_feature_routers(application: FastAPI) -> None:
     """Register optional feature routers when present."""
-    if visual_studio_router is not None:
-        application.include_router(visual_studio_router)
+    if (vsr := _load_visual_studio_router()) is not None:
+        application.include_router(vsr)
         logger.info("Visual Studio API router registered")
 
-    if copilot_router is not None:
-        application.include_router(copilot_router)
+    if (cr := _load_copilot_router()) is not None:
+        application.include_router(cr)
         logger.info("Policy Copilot API router registered")
 
     _register_optional_routers(application)
