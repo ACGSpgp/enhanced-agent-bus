@@ -1,0 +1,59 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest*)",
+      "Bash(python -m mypy*)",
+      "Bash(python -m ruff*)",
+      "Bash(ruff check*)",
+      "Bash(ruff format*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git ls-files*)",
+      "Bash(bash .claude/hooks/eab-python-postuse.sh*)",
+      "Bash(bash .claude/hooks/eab-guard-preuse.sh*)"
+    ],
+    "deny": [
+      "Bash(rm -rf*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -fd*)",
+      "Bash(git clean -f*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/eab-guard-preuse.sh",
+            "timeout": 10,
+            "statusMessage": "Checking enhanced-agent-bus guardrails..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/eab-python-postuse.sh",
+            "timeout": 30,
+            "statusMessage": "Running focused Python verification..."
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "claude-code-setup@claude-plugins-official": true,
+    "github@openai-curated": true,
+    "coderabbit@openai-curated": true
+  }
+}
