@@ -1,0 +1,27 @@
+__pycache__/
+*.pyc
+
+# Local secrets and agent/editor state
+.env
+.env.*
+.codex
+
+# Python packaging/build outputs
+build/
+dist/
+*.egg-info/
+
+# Local MLflow runs from experiments
+mlflow.db
+mlruns/
+
+# OMX/OMC runtime state. Keep tracked planning contracts visible.
+.omc/artifacts/
+.omc/drafts/
+.omc/plans/
+.omc/progress.txt
+.omc/project-memory.json
+.omc/sessions/
+.omc/specs/
+.omc/state/
+rust/.omc/
