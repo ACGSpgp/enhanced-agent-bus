@@ -254,7 +254,7 @@ check_untyped_defs = true
 disallow_any_generics = false
 # Re-enabled 2026-03: these were defeating strict mode.  New code MUST have
 # full type annotations.  Existing violations are grandfathered via per-module
-overrides below — remove overrides as modules are brought into compliance.
+# overrides below — remove overrides as modules are brought into compliance.
 disallow_incomplete_defs = true
 disallow_untyped_defs = true
 no_implicit_optional = true
