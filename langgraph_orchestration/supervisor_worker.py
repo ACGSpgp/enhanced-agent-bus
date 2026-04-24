@@ -153,7 +153,7 @@ class WorkerNode:
         executor: NodeExecutor | None = None,
         state_reducer: BaseStateReducer | None = None,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         self.worker_id = worker_id
         self.name = name or worker_id
         self.capabilities = capabilities or []
@@ -307,7 +307,7 @@ class WorkerPool:
         workers: list[WorkerNode] | None = None,
         max_concurrent_tasks: int = 10,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         self.workers: dict[str, WorkerNode] = {}
         self.max_concurrent_tasks = max_concurrent_tasks
         self.constitutional_hash = constitutional_hash
@@ -460,7 +460,7 @@ class SupervisorNode:
         state_reducer: BaseStateReducer | None = None,
         max_iterations: int = 10,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         self.supervisor_id = supervisor_id
         self.name = name
         self.worker_pool = worker_pool or WorkerPool()

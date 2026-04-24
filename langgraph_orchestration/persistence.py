@@ -183,7 +183,7 @@ class InMemoryStatePersistence(StatePersistence):
     Constitutional Hash: 608508a9bd224290
     """
 
-    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.constitutional_hash = constitutional_hash
         self._snapshots: dict[str, StateSnapshot] = {}
         self._checkpoints: dict[str, Checkpoint] = {}

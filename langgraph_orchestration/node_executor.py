@@ -74,7 +74,7 @@ class NodeExecutor(ABC):
         self,
         state_reducer: BaseStateReducer | None = None,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         self.state_reducer = state_reducer or MergeStateReducer()
         self.constitutional_hash = constitutional_hash
         self._function_cache: dict[str, NodeFunction] = {}
@@ -157,7 +157,7 @@ class AsyncNodeExecutor(NodeExecutor):
         default_retries: int = 3,
         retry_backoff_factor: float = 2.0,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         super().__init__(state_reducer, constitutional_hash)
         self.default_timeout_ms = default_timeout_ms
         self.default_retries = default_retries
@@ -351,7 +351,7 @@ class ParallelNodeExecutor(NodeExecutor):
         base_executor: NodeExecutor | None = None,
         max_concurrent: int = 10,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         super().__init__(constitutional_hash=constitutional_hash)
         self.base_executor = base_executor or AsyncNodeExecutor()
         self.max_concurrent = max_concurrent
@@ -481,7 +481,7 @@ class ConditionalNodeExecutor(NodeExecutor):
         self,
         base_executor: NodeExecutor | None = None,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         super().__init__(constitutional_hash=constitutional_hash)
         self.base_executor = base_executor or AsyncNodeExecutor()
         self._condition_cache: dict[str, Callable[[JSONDict], str]] = {}

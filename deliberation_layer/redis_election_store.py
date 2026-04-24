@@ -58,7 +58,7 @@ class RedisElectionStore:
     with TTL support for automatic expiration.
     """
 
-    def __init__(self, redis_url: str | None = None, election_prefix: str | None = None):
+    def __init__(self, redis_url: str | None = None, election_prefix: str | None = None) -> None:
         """
         Initialize Redis election store.
 

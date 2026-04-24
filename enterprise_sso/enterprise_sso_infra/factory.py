@@ -3,6 +3,8 @@ SSO Protocol handler factory.
 Constitutional Hash: 608508a9bd224290
 """
 
+from typing import Any
+
 from .oidc import OIDCHandler
 from .saml import SAML2Handler
 
@@ -17,7 +19,7 @@ class ProtocolHandlerFactory:
         x509_certificate: str | None = None,
         sp_entity_id: str | None = None,
         sp_acs_url: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> SAML2Handler:
         """Create SAML 2.0 handler."""
         return SAML2Handler(
@@ -36,7 +38,7 @@ class ProtocolHandlerFactory:
         client_secret: str | None = None,
         scopes: list[str] | None = None,
         use_pkce: bool = True,
-        **kwargs,
+        **kwargs: Any,
     ) -> OIDCHandler:
         """Create OIDC handler."""
         return OIDCHandler(

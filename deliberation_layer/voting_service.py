@@ -101,7 +101,7 @@ class Election:
 class ElectionProxy:
     """Proxy class that provides attribute access to election dict for backward compat."""
 
-    def __init__(self, data: JSONDict):
+    def __init__(self, data: JSONDict) -> None:
         self._data = data
 
     def __getattr__(self, name: str) -> object:
@@ -152,7 +152,7 @@ class VotingService:
         election_store: RedisElectionStore | None = None,
         kafka_bus: _VoteEventBusProtocol | None = None,
         force_in_memory: bool = False,
-    ):
+    ) -> None:
         self.default_strategy = default_strategy
         self.election_store = election_store
         self.kafka_bus = kafka_bus

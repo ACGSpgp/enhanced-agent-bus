@@ -1,0 +1,101 @@
+"""Regression tests for optional extension shim fallback exports."""
+
+from __future__ import annotations
+
+import importlib
+import sys
+from collections.abc import Iterator
+from contextlib import contextmanager
+from types import ModuleType
+
+
+@contextmanager
+def _reimport_with_blocked_dependency(
+    module_name: str,
+    dependency_name: str,
+) -> Iterator[ModuleType]:
+    """Re-import a shim module while forcing its dependency import to fail."""
+
+    original_module = sys.modules.pop(module_name, None)
+    dependency_present = dependency_name in sys.modules
+    original_dependency = sys.modules.get(dependency_name)
+    sys.modules[dependency_name] = None  # type: ignore[assignment]
+
+    try:
+        module = importlib.import_module(module_name)
+        yield importlib.reload(module)
+    finally:
+        sys.modules.pop(module_name, None)
+        if original_module is not None:
+            sys.modules[module_name] = original_module
+
+        if dependency_present:
+            sys.modules[dependency_name] = original_dependency  # type: ignore[assignment]
+        else:
+            sys.modules.pop(dependency_name, None)
+
+
+def test_ext_context_optimization_fallback_exports() -> None:
+    with _reimport_with_blocked_dependency(
+        "enhanced_agent_bus._ext_context_optimization",
+        "enhanced_agent_bus.context_optimization",
+    ) as module:
+        assert module.CONTEXT_OPTIMIZATION_AVAILABLE is False
+
+        none_exports = {
+            "create_spec_compressor",
+            "create_cached_validator",
+            "create_optimized_bus",
+        }
+        for name in module.__all__:
+            value = getattr(module, name)
+            if name == "CONTEXT_OPTIMIZATION_AVAILABLE":
+                assert value is False
+            elif name in none_exports:
+                assert value is None
+            else:
+                assert value is object
+
+        assert module._EXT_ALL == module.__all__
+
+
+def test_ext_performance_fallback_exports() -> None:
+    with _reimport_with_blocked_dependency(
+        "enhanced_agent_bus._ext_performance",
+        "enhanced_agent_bus.performance_optimization",
+    ) as module:
+        assert module.PERFORMANCE_OPTIMIZATION_AVAILABLE is False
+
+        none_exports = {
+            "create_async_pipeline",
+            "create_resource_pool",
+            "create_memory_optimizer",
+            "create_latency_reducer",
+        }
+        for name in module.__all__:
+            value = getattr(module, name)
+            if name == "PERFORMANCE_OPTIMIZATION_AVAILABLE":
+                assert value is False
+            elif name in none_exports:
+                assert value is None
+            else:
+                assert value is object
+
+        assert module._EXT_ALL == module.__all__
+
+
+def test_ext_circuit_breaker_fallback_exports() -> None:
+    with _reimport_with_blocked_dependency(
+        "enhanced_agent_bus._ext_circuit_breaker",
+        "enhanced_agent_bus.circuit_breaker",
+    ) as module:
+        assert module.SERVICE_CIRCUIT_BREAKER_AVAILABLE is False
+
+        for name in module._EXT_ALL:
+            value = getattr(module, name)
+            if name == "SERVICE_CIRCUIT_BREAKER_AVAILABLE":
+                assert value is False
+            elif name == "SERVICE_CIRCUIT_CONFIGS":
+                assert value == {}
+            else:
+                assert value is object

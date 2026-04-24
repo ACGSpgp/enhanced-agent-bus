@@ -127,7 +127,7 @@ class ImpactScorer:
         loco_operator_device: str = "cpu",
         model_path: str | None = None,
         tokenizer_path: str | None = None,
-    ):
+    ) -> None:
         """
         Initialize the impact scorer.
 

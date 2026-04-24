@@ -20,6 +20,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timezone
 from enum import Enum
+from typing import Any
 
 try:
     from enhanced_agent_bus._compat.types import JSONDict
@@ -160,7 +161,7 @@ class RoleMappingCache:
     Constitutional Hash: 608508a9bd224290
     """
 
-    def __init__(self, ttl_seconds: int = 300):  # Default 5 minute TTL
+    def __init__(self, ttl_seconds: int = 300) -> None:  # Default 5 minute TTL
         """Initialize cache with TTL."""
         self.ttl_seconds = ttl_seconds
         self._cache: dict[str, tuple[RoleMappingResult, float]] = {}
@@ -288,7 +289,7 @@ class RoleMappingService:
 
     def __init__(
         self, cache_ttl_seconds: int = 300, constitutional_hash: str = CONSTITUTIONAL_HASH
-    ):
+    ) -> None:
         """Initialize the role mapping service."""
         if constitutional_hash != CONSTITUTIONAL_HASH:
             raise ValueError(
@@ -373,7 +374,7 @@ class RoleMappingService:
 
         return sorted(mappings, key=lambda m: (-m.priority, m.source_value))
 
-    def update_mapping(self, mapping_id: str, **updates) -> RoleMapping | None:
+    def update_mapping(self, mapping_id: str, **updates: Any) -> RoleMapping | None:
         """Update an existing role mapping."""
         mapping = self._mappings.get(mapping_id)
         if not mapping:

@@ -121,7 +121,7 @@ class OPAValidator:
     For testing, we do basic syntax validation.
     """
 
-    def __init__(self, strict: bool = False, opa_url: str | None = None):
+    def __init__(self, strict: bool = False, opa_url: str | None = None) -> None:
         self._strict = strict
         self._opa_url = opa_url
 
@@ -178,7 +178,7 @@ class PolicyConverter:
         "credentials",
     }
 
-    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         if constitutional_hash != CONSTITUTIONAL_HASH:
             raise ValueError(f"Invalid constitutional hash: {constitutional_hash}")
         self._constitutional_hash = constitutional_hash

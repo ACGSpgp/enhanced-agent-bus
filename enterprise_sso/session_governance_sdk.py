@@ -331,7 +331,7 @@ class StoredSession:
 class TenantSessionStore:
     """Tenant-isolated session store."""
 
-    def __init__(self, tenant_id: str, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, tenant_id: str, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.tenant_id = tenant_id
         self.constitutional_hash = constitutional_hash
         self._sessions: dict[str, StoredSession] = {}
@@ -382,7 +382,7 @@ class TenantSessionStore:
 class SessionLifecycleManager:
     """Manages session lifecycle."""
 
-    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.constitutional_hash = constitutional_hash
         self._sessions: dict[str, Session] = {}
         self._stores: dict[str, TenantSessionStore] = {}
@@ -560,7 +560,7 @@ class SessionTokenManager:
         issuer: str = SESSION_JWT_ISSUER,
         audience: str = SESSION_JWT_AUDIENCE,
         redis_client: Any | None = None,
-    ):
+    ) -> None:
         self._private_key = private_key
         self.token_ttl_minutes = token_ttl_minutes
         self.refresh_token_ttl_days = refresh_token_ttl_days
@@ -745,7 +745,7 @@ class SessionTokenManager:
 class SessionMonitor:
     """Monitors session events and analytics."""
 
-    def __init__(self, tenant_id: str, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, tenant_id: str, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.tenant_id = tenant_id
         self.constitutional_hash = constitutional_hash
         self._events: list[SessionEvent] = []
@@ -819,7 +819,7 @@ class SessionGovernanceClient:
         tenant_id: str,
         max_retries: int = 3,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.tenant_id = tenant_id

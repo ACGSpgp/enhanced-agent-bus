@@ -10,7 +10,7 @@ Phase 10 Task 2: Enterprise SSO & Identity Management Integration
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timezone
@@ -340,7 +340,7 @@ if FASTAPI_AVAILABLE:
             app: object,
             sso_service: EnterpriseSSOService,
             config: SSOMiddlewareConfig | None = None,
-        ):
+        ) -> None:
             """
             Initialize SSO authentication middleware.
 
@@ -585,7 +585,7 @@ else:
     class SSOAuthenticationMiddleware:  # type: ignore[no-redef]
         """Placeholder SSO middleware when FastAPI is not available."""
 
-        def __init__(self, *args: object, **kwargs: object):
+        def __init__(self, *args: object, **kwargs: object) -> None:
             raise ImportError(
                 "FastAPI is required for SSOAuthenticationMiddleware. "
                 "Install with: pip install fastapi starlette"
@@ -639,7 +639,9 @@ if FASTAPI_AVAILABLE:
             )
         return session
 
-    def require_roles(*roles: str, any_role: bool = True):
+    def require_roles(
+        *roles: str, any_role: bool = True
+    ) -> Callable[..., Awaitable[SSOSessionContext]]:
         """
         Create FastAPI dependency that requires specific MACI roles.
 

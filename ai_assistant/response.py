@@ -147,7 +147,7 @@ class TemplateResponseGenerator(ResponseGenerator):
         personality: PersonalityConfig | None = None,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
         config: "ResponseConfig" | None = None,
-    ):
+    ) -> None:
         # Use config if provided, otherwise use individual params
         if config is not None:
             self.personality = config.default_personality
@@ -428,7 +428,7 @@ class LLMResponseGenerator(ResponseGenerator):
         constitutional_hash: str = CONSTITUTIONAL_HASH,
         max_tokens: int = 150,
         temperature: float = 0.7,
-    ):
+    ) -> None:
         self.llm_client = llm_client
         self.personality = personality or PersonalityConfig()
         self.constitutional_hash = constitutional_hash
@@ -611,7 +611,7 @@ class HybridResponseGenerator(ResponseGenerator):
         personality: PersonalityConfig | None = None,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
         llm_intents: list[str] | None = None,
-    ):
+    ) -> None:
         self.template_generator = TemplateResponseGenerator(
             templates=templates,
             personality=personality,

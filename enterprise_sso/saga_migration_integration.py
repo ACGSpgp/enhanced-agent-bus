@@ -109,7 +109,7 @@ class SagaMigrationResult:
 class CheckpointStore:
     """Store for migration checkpoints."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._checkpoints: dict[str, list[MigrationCheckpoint]] = {}
 
     async def save(self, checkpoint: MigrationCheckpoint) -> None:
@@ -151,7 +151,7 @@ class SagaMigrationService:
         orchestrator: SagaOrchestrator | None = None,
         checkpoint_store: CheckpointStore | None = None,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         self.job_manager = job_manager or MigrationJobManager()
         self.orchestrator = orchestrator or SagaOrchestrator()
         self.checkpoint_store = checkpoint_store or CheckpointStore()

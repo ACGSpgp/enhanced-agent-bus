@@ -107,7 +107,7 @@ class GovernanceKnowledgeGraph:
         self,
         storage: GraphStorage | None = None,
         embedding_provider: EmbeddingProvider | None = None,
-    ):
+    ) -> None:
         self._storage = storage
         self._embedding_provider = embedding_provider
         self._nodes: dict[str, GraphNode] = {}
@@ -270,7 +270,7 @@ class GovernanceKnowledgeGraph:
 class PolicyGraphExtractor:
     """Extract governance graph nodes from Rego policies."""
 
-    def __init__(self, graph: GovernanceKnowledgeGraph, tenant_id: str):
+    def __init__(self, graph: GovernanceKnowledgeGraph, tenant_id: str) -> None:
         self._graph = graph
         self._tenant_id = tenant_id
 
@@ -406,7 +406,7 @@ class GraphSimilaritySearch:
         self,
         graph: GovernanceKnowledgeGraph,
         embedding_provider: EmbeddingProvider | None = None,
-    ):
+    ) -> None:
         self._graph = graph
         self._embedding_provider = embedding_provider
 

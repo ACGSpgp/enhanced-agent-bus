@@ -91,7 +91,7 @@ class BaseRetriever:
 class PolicyRetriever(BaseRetriever):
     """Retriever focusing on governance policies using PolicyIndex."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.index = get_policy_index() if POLICY_INDEX_AVAILABLE else None
 
     async def retrieve(self, query: str, limit: int = 5) -> list[RetrievalResult]:
@@ -135,7 +135,7 @@ class SemanticRetriever(BaseRetriever):
         self,
         embedding_provider: BaseEmbeddingProvider | None = None,
         vector_store: BaseVectorStore | None = None,
-    ):
+    ) -> None:
         self._embedding_provider = embedding_provider
         self._vector_store = vector_store
         self._initialized = False
@@ -232,7 +232,7 @@ class HybridRetriever(BaseRetriever):
     Implements multi-stage retrieval: filter -> fetch -> rerank.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.retrievers = [PolicyRetriever(), SemanticRetriever()]
 
     async def retrieve(self, query: str, limit: int = 5) -> list[RetrievalResult]:
@@ -254,7 +254,7 @@ class KnowledgeRetriever:
     Main interface for knowledge retrieval in AI Assistant.
     """
 
-    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.retriever = HybridRetriever()
         self.constitutional_hash = constitutional_hash
 

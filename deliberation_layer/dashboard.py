@@ -4,6 +4,7 @@ Streamlit-based UI for human-in-the-loop approval of high-risk decisions.
 """
 
 from datetime import UTC, datetime, timezone
+from typing import Any
 
 import pandas as pd
 import streamlit as st
@@ -20,7 +21,7 @@ from .deliberation_queue import get_deliberation_queue
 from .llm_assistant import get_llm_assistant
 
 
-def main():
+def main() -> None:
     """Main dashboard function."""
     st.set_page_config(page_title="ACGS-2 Deliberation Dashboard", page_icon="⚖️", layout="wide")
 
@@ -47,7 +48,7 @@ def main():
         show_settings(adaptive_router)
 
 
-def show_pending_reviews(deliberation_queue, llm_assistant):
+def show_pending_reviews(deliberation_queue: Any, llm_assistant: Any) -> None:
     """Show pending items for human review."""
     st.header("Pending Reviews")
 
@@ -79,7 +80,7 @@ def show_pending_reviews(deliberation_queue, llm_assistant):
                 show_review_actions(item["item_id"], deliberation_queue)
 
 
-def show_item_details(item: JSONDict, _llm_assistant, deliberation_queue):
+def show_item_details(item: JSONDict, _llm_assistant: Any, deliberation_queue: Any) -> None:
     """Show detailed information about a deliberation item."""
     item_details = deliberation_queue.get_item_details(item["item_id"])
 
@@ -141,7 +142,7 @@ def show_item_details(item: JSONDict, _llm_assistant, deliberation_queue):
                 st.json(analysis)
 
 
-def show_review_actions(item_id: str, deliberation_queue):
+def show_review_actions(item_id: str, deliberation_queue: Any) -> None:
     """Show action buttons for reviewing an item."""
     st.subheader("Review Actions")
 
@@ -185,7 +186,7 @@ def show_review_actions(item_id: str, deliberation_queue):
             st.error("Failed to submit decision")
 
 
-def show_queue_status(deliberation_queue):
+def show_queue_status(deliberation_queue: Any) -> None:
     """Show overall queue status and statistics."""
     st.header("Queue Status")
 
@@ -223,7 +224,7 @@ def show_queue_status(deliberation_queue):
         st.info("Queue is empty")
 
 
-def show_analytics(adaptive_router, _deliberation_queue):
+def show_analytics(adaptive_router: Any, _deliberation_queue: Any) -> None:
     """Show analytics and performance metrics."""
     st.header("Analytics & Performance")
 
@@ -270,7 +271,7 @@ def show_analytics(adaptive_router, _deliberation_queue):
         st.metric("History Size", history_size)
 
 
-def show_settings(adaptive_router):
+def show_settings(adaptive_router: Any) -> None:
     """Show settings and configuration options."""
     st.header("Settings")
 

@@ -267,7 +267,7 @@ class PublishResult:
 class KafkaConnectionPool:
     """Connection pool for Kafka producers."""
 
-    def __init__(self, config: KafkaConfig, producer_config: ProducerConfig, pool_size: int = 5):
+    def __init__(self, config: KafkaConfig, producer_config: ProducerConfig, pool_size: int = 5) -> None:
         self.config = config
         self.producer_config = producer_config
         self.pool_size = pool_size
@@ -337,7 +337,7 @@ class KafkaConnectionPool:
 class MockProducer:
     """Mock producer for testing."""
 
-    def __init__(self, config: KafkaConfig, producer_config: ProducerConfig):
+    def __init__(self, config: KafkaConfig, producer_config: ProducerConfig) -> None:
         self.config = config
         self.producer_config = producer_config
 
@@ -360,7 +360,7 @@ class MockProducer:
 class KafkaEventPublisher:
     """Publishes governance events to Kafka."""
 
-    def __init__(self, config: KafkaConfig, producer_config: ProducerConfig | None = None):
+    def __init__(self, config: KafkaConfig, producer_config: ProducerConfig | None = None) -> None:
         self.config = config
         self.producer_config = producer_config or ProducerConfig()
         self._pool: KafkaConnectionPool | None = None
@@ -444,7 +444,7 @@ class KafkaEventPublisher:
 class GovernanceEventProducer:
     """Enhanced producer with governance-specific features."""
 
-    def __init__(self, config: KafkaConfig, producer_config: ProducerConfig | None = None):
+    def __init__(self, config: KafkaConfig, producer_config: ProducerConfig | None = None) -> None:
         self.kafka_config = config
         self.config = producer_config or ProducerConfig()
         self._publisher = KafkaEventPublisher(config, self.config)
@@ -503,7 +503,7 @@ class GovernanceEventProducer:
 class SchemaRegistry:
     """Schema registry client for Avro/Protobuf schemas."""
 
-    def __init__(self, url: str, auto_register: bool = True, cache_capacity: int = 100):
+    def __init__(self, url: str, auto_register: bool = True, cache_capacity: int = 100) -> None:
         self.url = url
         self.auto_register = auto_register
         self._schema_cache: dict = {}
@@ -564,7 +564,7 @@ class SchemaRegistry:
 class GovernanceEventConsumer:
     """Consumes governance events from Kafka."""
 
-    def __init__(self, config: KafkaConfig, consumer_config: ConsumerConfig):
+    def __init__(self, config: KafkaConfig, consumer_config: ConsumerConfig) -> None:
         self.kafka_config = config
         self.config = consumer_config
         self._subscribed_topics: list = []
@@ -670,7 +670,7 @@ class DeadLetterQueue:
         max_retries: int = 3,
         retry_delay_ms: int = 1000,
         permanent_failure_topic: str | None = None,
-    ):
+    ) -> None:
         self.topic = topic
         self.max_retries = max_retries
         self.retry_delay_ms = retry_delay_ms

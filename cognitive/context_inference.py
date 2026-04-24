@@ -125,7 +125,7 @@ class LongContextManager:
         max_tokens: int = 128000,
         token_counter: TokenCounter | None = None,
         eviction_threshold: float = 0.9,
-    ):
+    ) -> None:
         self._max_tokens = max_tokens
         self._token_counter = token_counter or SimpleTokenCounter()
         self._eviction_threshold = eviction_threshold
@@ -238,7 +238,7 @@ class ContextDelta:
 
 
 class IncrementalContextUpdater:
-    def __init__(self, context_manager: LongContextManager):
+    def __init__(self, context_manager: LongContextManager) -> None:
         self._context_manager = context_manager
         self._deltas: dict[str, list[ContextDelta]] = {}
 
@@ -343,7 +343,7 @@ class MultiTurnReasoner:
         self,
         context_manager: LongContextManager,
         inference_provider: InferenceProvider | None = None,
-    ):
+    ) -> None:
         self._context_manager = context_manager
         self._inference_provider = inference_provider
         self._chains: dict[str, ReasoningChain] = {}

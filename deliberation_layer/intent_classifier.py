@@ -165,7 +165,7 @@ class IntentClassifier:
         config: BusConfiguration | None = None,
         llm_enabled: bool = False,
         llm_confidence_threshold: float = 0.8,
-    ):
+    ) -> None:
         self.model_name = model_name
         self.config = config or BusConfiguration()
         self.llm_enabled = llm_enabled

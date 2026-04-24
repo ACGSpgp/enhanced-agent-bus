@@ -138,7 +138,7 @@ class HITLManager:
 
     def __init__(
         self, deliberation_queue: DeliberationQueue, audit_ledger: AuditLedger | None = None
-    ):
+    ) -> None:
         """Initialize HITL Manager."""
         self.queue = deliberation_queue
         self.audit_ledger = audit_ledger or AuditLedger()

@@ -320,7 +320,7 @@ class NotificationChannel(ABC):
 class SlackNotificationChannel(NotificationChannel):
     """Slack notification implementation."""
 
-    def __init__(self, webhook_url: str | None = None, bot_token: str | None = None):
+    def __init__(self, webhook_url: str | None = None, bot_token: str | None = None) -> None:
         self.webhook_url = webhook_url or os.environ.get("SLACK_WEBHOOK_URL")
         self.bot_token = bot_token or os.environ.get("SLACK_BOT_TOKEN")
 
@@ -463,7 +463,7 @@ class SlackNotificationChannel(NotificationChannel):
 class TeamsNotificationChannel(NotificationChannel):
     """Microsoft Teams notification implementation."""
 
-    def __init__(self, webhook_url: str | None = None):
+    def __init__(self, webhook_url: str | None = None) -> None:
         self.webhook_url = webhook_url or os.environ.get("TEAMS_WEBHOOK_URL")
 
     async def send_approval_request(

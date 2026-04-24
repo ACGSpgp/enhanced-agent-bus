@@ -132,7 +132,7 @@ class EncryptionService:
     - Local encryption fallback for development
     """
 
-    def __init__(self, vault_client: object | None = None):
+    def __init__(self, vault_client: object | None = None) -> None:
         """Initialize with optional Vault client."""
         self._vault_client = vault_client
         self._local_key = secrets.token_bytes(32)  # Fallback local key
@@ -279,7 +279,7 @@ class IntegrationAuditService:
     Constitutional Hash: 608508a9bd224290
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._audit_log: list[JSONDict] = []
 
     def log(
@@ -349,7 +349,7 @@ class IntegrationConfigService:
         health_checker: IntegrationHealthChecker | None = None,
         audit_service: IntegrationAuditService | None = None,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         """Initialize the service."""
         if constitutional_hash != CONSTITUTIONAL_HASH:
             raise ValueError(f"Invalid constitutional hash: {constitutional_hash}")

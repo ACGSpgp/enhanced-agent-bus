@@ -17,6 +17,7 @@ import importlib.util
 import math
 from contextlib import nullcontext
 from dataclasses import dataclass
+from typing import Any
 
 # Import centralized constitutional hash
 try:
@@ -66,13 +67,13 @@ if TORCH_AVAILABLE:
     torch_no_grad_context = torch.no_grad
 else:
 
-    def torch_no_grad():
-        def decorator(func):
+    def torch_no_grad() -> Any:
+        def decorator(func: Any) -> Any:
             return func
 
         return decorator
 
-    def torch_no_grad_context():
+    def torch_no_grad_context() -> Any:
         return nullcontext()
 
 
@@ -121,7 +122,7 @@ class MambaSSM(_ModuleBase):  # type: ignore[misc, valid-type]
     Based on Mamba-2 architecture for O(n) context processing
     """
 
-    def __init__(self, config: MambaConfig):
+    def __init__(self, config: MambaConfig) -> None:
         super().__init__()
         self.config = config
         self.d_model = config.d_model
@@ -153,7 +154,7 @@ class MambaSSM(_ModuleBase):  # type: ignore[misc, valid-type]
         # Initialize parameters
         self._initialize_weights()
 
-    def _initialize_weights(self):
+    def _initialize_weights(self) -> None:
         """Initialize model weights following Mamba-2 initialization."""
         # Input projection
         nn.init.xavier_uniform_(self.in_proj.weight)
@@ -243,7 +244,7 @@ class SharedAttentionLayer(_ModuleBase):  # type: ignore[misc, valid-type]
     Used sparingly to maintain O(n) complexity while enabling precise operations.
     """
 
-    def __init__(self, config: MambaConfig):
+    def __init__(self, config: MambaConfig) -> None:
         super().__init__()
         self.config = config
         self.d_model = config.d_model
@@ -299,7 +300,7 @@ class ConstitutionalMambaHybrid(_ModuleBase):  # type: ignore[misc, valid-type]
     Constitutional Hash: 608508a9bd224290
     """
 
-    def __init__(self, config: MambaConfig):
+    def __init__(self, config: MambaConfig) -> None:
         super().__init__()
         self.config = config
         self.constitutional_hash = CONSTITUTIONAL_HASH
@@ -433,7 +434,7 @@ class ConstitutionalMambaHybrid(_ModuleBase):  # type: ignore[misc, valid-type]
                 # For inference, this might mean offloading or specific torch optimizations
                 from torch.utils.checkpoint import checkpoint
 
-                def mamba_wrap(hidden_states, mamba=mamba):
+                def mamba_wrap(hidden_states: Any, mamba: Any = mamba) -> Any:
                     return mamba(hidden_states)
 
                 x = checkpoint(mamba_wrap, x, use_reentrant=False)
@@ -466,12 +467,12 @@ class ConstitutionalMambaHybrid(_ModuleBase):  # type: ignore[misc, valid-type]
             "constitutional_hash": self.constitutional_hash,
         }
 
-    def enable_memory_efficient_mode(self):
+    def enable_memory_efficient_mode(self) -> None:
         """Enable memory-efficient processing for very long contexts."""
         logger.info("Enabling memory-efficient mode for long contexts")
         self.config.memory_efficient_mode = True
 
-    def reset_memory_cache(self):
+    def reset_memory_cache(self) -> None:
         """Reset the memory cache."""
         if hasattr(self, "memory_cache"):
             self.memory_cache.zero_()
@@ -483,7 +484,7 @@ class MambaHybridManager:
     Handles model loading, inference, and integration with ACGS-2.
     """
 
-    def __init__(self, config: MambaConfig | None = None):
+    def __init__(self, config: MambaConfig | None = None) -> None:
         self.config = config or MambaConfig()
         self.model: ConstitutionalMambaHybrid | None = None
         self.device = torch.device(self.config.device) if TORCH_AVAILABLE else self.config.device
@@ -574,7 +575,7 @@ class MambaHybridManager:
             "dtype": str(self.config.dtype),
         }
 
-    def unload_model(self):
+    def unload_model(self) -> None:
         """Unload the model to free memory."""
         if self.model is not None:
             del self.model

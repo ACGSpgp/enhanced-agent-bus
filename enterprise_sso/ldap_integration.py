@@ -15,6 +15,8 @@ from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum
 from queue import Empty, Queue
+from types import TracebackType
+from typing import Any
 
 from enhanced_agent_bus.observability.structured_logging import get_logger
 
@@ -67,7 +69,7 @@ class LDAPIntegrationError(ACGSBaseError):
     http_status_code = 500
     error_code = "LDAP_INTEGRATION_ERROR"
 
-    def __init__(self, message: str, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, message: str, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.constitutional_hash = constitutional_hash
         super().__init__(message, details={})
 
@@ -165,7 +167,7 @@ class LDAPConfig(BaseModel):
         base_dn: str,
         bind_dn: str | None = None,
         bind_password: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> "LDAPConfig":
         """Create LDAP config from tenant configuration."""
         return cls(
@@ -222,7 +224,7 @@ class LDAPCircuitBreaker:
         self,
         failure_threshold: int = 5,
         recovery_timeout: float = 30.0,
-    ):
+    ) -> None:
         """Initialize circuit breaker."""
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
@@ -290,7 +292,7 @@ class LDAPCircuitBreaker:
 class LDAPConnection:
     """LDAP connection wrapper with lifecycle management."""
 
-    def __init__(self, config: LDAPConfig):
+    def __init__(self, config: LDAPConfig) -> None:
         """Initialize LDAP connection."""
         if not LDAP_AVAILABLE:
             raise LDAPIntegrationError(
@@ -397,7 +399,12 @@ class LDAPConnection:
         self.bind()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         """Context manager exit."""
         self.disconnect()
 
@@ -410,7 +417,7 @@ class LDAPConnection:
 class LDAPConnectionPool:
     """Connection pool for LDAP connections."""
 
-    def __init__(self, config: LDAPConfig):
+    def __init__(self, config: LDAPConfig) -> None:
         """Initialize connection pool."""
         self.config = config
         self.max_size = config.pool_size
@@ -439,7 +446,7 @@ class LDAPConnectionPool:
         return conn
 
     @contextmanager
-    def acquire(self):
+    def acquire(self) -> None:
         """Acquire a connection from the pool."""
         conn: LDAPConnection | None = None
 
@@ -504,7 +511,7 @@ class LDAPIntegration:
     - Multi-tenant support
     """
 
-    def __init__(self, config: LDAPConfig):
+    def __init__(self, config: LDAPConfig) -> None:
         """Initialize LDAP integration."""
         self.config = config
 
@@ -955,7 +962,7 @@ def escape_filter_chars(value: str) -> str:
 
 def build_search_filter(
     template: str,
-    **kwargs,
+    **kwargs: Any,
 ) -> str:
     """Build LDAP search filter from template."""
     # Escape values before substitution

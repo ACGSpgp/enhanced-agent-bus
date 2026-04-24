@@ -13,7 +13,7 @@ import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import TypeAlias
+from typing import Any, TypeAlias
 
 from enhanced_agent_bus.observability.structured_logging import get_logger
 
@@ -191,7 +191,7 @@ class ConversationContext:
     tenant_id: str | None = None
     max_history: int = 100
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Enforce max_history constraint after initialization."""
         if len(self.messages) > self.max_history:
             self.messages = self.messages[-self.max_history :]
@@ -200,7 +200,7 @@ class ConversationContext:
         self,
         message_or_role: Message | str | MessageRole,
         content: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Message:
         """
         Add a message to the conversation history.
@@ -269,7 +269,7 @@ class ConversationContext:
         )
         return hashlib.sha256(context_str.encode()).hexdigest()[:16]
 
-    def update_entity(self, entity_type: str, entity_value: JSONValue, **metadata) -> None:
+    def update_entity(self, entity_type: str, entity_value: JSONValue, **metadata: JSONValue) -> None:
         """Update an entity in the context."""
         self.entities[entity_type] = {
             "value": entity_value,
@@ -385,14 +385,16 @@ class ContextManager:
         max_context_length: int = 50,
         max_entity_age_turns: int = 10,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         self.max_context_length = max_context_length
         self.max_entity_age_turns = max_entity_age_turns
         self.constitutional_hash = constitutional_hash
         self._reference_patterns = self._compile_reference_patterns()
         self._sessions: dict[str, ConversationContext] = {}
 
-    def create_context(self, user_id: str, session_id: str, **kwargs) -> ConversationContext:
+    def create_context(
+        self, user_id: str, session_id: str, **kwargs: Any
+    ) -> ConversationContext:
         """Create and store a new conversation context."""
         context = ConversationContext(
             user_id=user_id,

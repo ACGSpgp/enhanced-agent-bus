@@ -181,7 +181,7 @@ class TrafficConfig:
 class DecisionLogImporter:
     """Imports decision logs from CSV files."""
 
-    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.constitutional_hash = constitutional_hash
         self._imported_decisions: dict[str, ImportedDecision] = {}
         self._import_results: dict[str, ImportResult] = {}
@@ -296,7 +296,7 @@ class ShadowModeExecutor:
         legacy_evaluator: Callable,
         acgs2_evaluator: Callable,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         self.legacy_evaluator = legacy_evaluator
         self.acgs2_evaluator = acgs2_evaluator
         self.constitutional_hash = constitutional_hash
@@ -410,7 +410,7 @@ class ShadowModeExecutor:
 class TrafficRouter:
     """Routes traffic between legacy and ACGS-2 systems."""
 
-    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.constitutional_hash = constitutional_hash
         self._configs: dict[str, TrafficConfig] = {}
         self._request_counts: dict[str, int] = {}

@@ -163,7 +163,7 @@ class GraphOrchestrator:
         checkpoint_manager: ConstitutionalCheckpointManager | None = None,
         hitl_handler: HITLInterruptHandler | None = None,
         maci_enforcer: object | None = None,
-    ):
+    ) -> None:
         self.graph = graph
         self.config = config or GraphOrchestratorConfig()
         self.constitutional_hash = self.config.constitutional_hash
