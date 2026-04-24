@@ -15,6 +15,9 @@ dist/
 mlflow.db
 mlruns/
 
+# Remember plugin runtime state (session memory, logs, temp files)
+.remember/
+
 # OMX/OMC runtime state. Keep tracked planning contracts visible.
 .omc/artifacts/
 .omc/drafts/
