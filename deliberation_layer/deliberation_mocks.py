@@ -9,9 +9,10 @@ allowing the deliberation layer to function in isolated testing or degraded mode
 
 import sys
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime, timezone
 from enum import Enum
-from typing import cast
+from typing import Any, cast
 
 try:
     from enhanced_agent_bus._compat.types import JSONDict
@@ -30,13 +31,13 @@ MOCK_STORAGE: JSONDict = cast(JSONDict, getattr(sys.modules[__name__], _MOCK_STO
 class MockMagicMock:
     """Minimal MagicMock replacement when unittest.mock unavailable."""
 
-    def __init__(self, *_args, **_kwargs):
+    def __init__(self, *_args: Any, **_kwargs: Any) -> None:
         pass
 
-    def __call__(self, *_args, **_kwargs):
+    def __call__(self, *_args: Any, **_kwargs: Any) -> "MockMagicMock":
         return self
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> "MockMagicMock":
         return self
 
 
@@ -70,7 +71,7 @@ class MockVoteType(Enum):
 class MockItem:
     """Mock deliberation item for queue operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.current_votes = []
         self.status = "pending"
         self.item_id = None
@@ -82,7 +83,7 @@ class MockItem:
 class MockVote:
     """Mock vote for deliberation voting."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.vote = None
         self.agent_id = None
 
@@ -96,7 +97,7 @@ class MockComponent:
     Constitutional Hash: 608508a9bd224290
     """
 
-    def __init__(self, *_args, **_kwargs):
+    def __init__(self, *_args: Any, **_kwargs: Any) -> None:
         self.queue = MOCK_STORAGE["tasks"]
         self.tasks = self.queue
         self.stats = MOCK_STORAGE["stats"] or {
@@ -110,7 +111,7 @@ class MockComponent:
         MOCK_STORAGE["stats"] = self.stats
         self.processing_tasks = []
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Callable[..., Any]:
         """Dynamic attribute handler for async mock methods."""
 
         # Synchronous getter methods
@@ -120,7 +121,7 @@ class MockComponent:
         # All other methods are async
         return self._create_async_mock(name)
 
-    def _create_getter_method(self, name: str):
+    def _create_getter_method(self, name: str) -> Callable[..., Any]:
         """Create synchronous getter methods."""
         getter_methods = {
             "get_routing_stats": lambda *_args, **_kwargs: {},
@@ -135,18 +136,20 @@ class MockComponent:
 
         return getter_methods.get(name, lambda *_args, **_kwargs: None)
 
-    def _create_async_mock(self, name: str):
+    def _create_async_mock(self, name: str) -> Callable[..., Any]:
         """Create async mock methods."""
 
-        async def async_mock(*args, **kwargs):
+        async def async_mock(*args: Any, **kwargs: Any) -> Any:
             return self._handle_async_method(name, args, kwargs)
 
         return async_mock
 
-    def _handle_async_method(self, name: str, args: tuple, kwargs: dict):
+    def _handle_async_method(
+        self, name: str, args: tuple[Any, ...], kwargs: dict[str, Any]
+    ) -> JSONDict | bool | str:
         """Handle async method calls with simplified routing."""
 
-        def get_arg(idx, key, default=None):
+        def get_arg(idx: int, key: str, default: Any = None) -> Any:
             if len(args) > idx:
                 return args[idx]
             return kwargs.get(key, default)
@@ -169,14 +172,14 @@ class MockComponent:
 
         return {}
 
-    def _mock_routing_methods(self, get_arg):
+    def _mock_routing_methods(self, get_arg: Callable[..., Any]) -> JSONDict:
         """Handle routing method mocks."""
         msg = get_arg(0, "message")
         score = getattr(msg, "impact_score", 0.0)
         lane = "deliberation" if (score and score >= 0.5) else "fast"
         return {"lane": lane, "decision": "mock", "status": "routed"}
 
-    def _mock_queue_enqueue(self, get_arg):
+    def _mock_queue_enqueue(self, get_arg: Callable[..., Any]) -> str:
         """Handle queue enqueue method mocks."""
         tid = str(uuid.uuid4())
         item = MockItem()
@@ -186,7 +189,7 @@ class MockComponent:
         self.queue[tid] = item
         return tid
 
-    def _mock_voting_methods(self, name: str, get_arg):
+    def _mock_voting_methods(self, name: str, get_arg: Callable[..., Any]) -> bool:
         """Handle voting method mocks."""
         tid = get_arg(0, "item_id")
         if tid not in self.queue:
@@ -202,7 +205,7 @@ class MockComponent:
 
         return True
 
-    def _mock_processing_methods(self, name: str, get_arg):
+    def _mock_processing_methods(self, name: str, get_arg: Callable[..., Any]) -> JSONDict:
         """Handle processing method mocks."""
         if name == "process_message":
             return {
@@ -232,56 +235,56 @@ class MockComponent:
     def get_task(self, task_id: str) -> MockItem | None:
         return cast(MockItem | None, self.queue.get(task_id))
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize the mock component."""
         pass
 
-    async def close(self):
+    async def close(self) -> None:
         """Close the mock component."""
         pass
 
-    def set_impact_threshold(self, threshold: float):
+    def set_impact_threshold(self, threshold: float) -> None:
         """set impact threshold (no-op for mock)."""
         pass
 
 
 # Factory functions for creating mock instances
-def create_mock_impact_scorer(*_args, **_kwargs) -> MockComponent:
+def create_mock_impact_scorer(*_args: Any, **_kwargs: Any) -> MockComponent:
     """Create a mock impact scorer."""
     return MockComponent()
 
 
-def create_mock_adaptive_router(*_args, **_kwargs) -> MockComponent:
+def create_mock_adaptive_router(*_args: Any, **_kwargs: Any) -> MockComponent:
     """Create a mock adaptive router."""
     return MockComponent()
 
 
-def create_mock_deliberation_queue(*_args, **_kwargs) -> MockComponent:
+def create_mock_deliberation_queue(*_args: Any, **_kwargs: Any) -> MockComponent:
     """Create a mock deliberation queue."""
     return MockComponent()
 
 
-def create_mock_llm_assistant(*_args, **_kwargs) -> MockComponent:
+def create_mock_llm_assistant(*_args: Any, **_kwargs: Any) -> MockComponent:
     """Create a mock LLM assistant."""
     return MockComponent()
 
 
-def create_mock_redis_queue(*_args, **_kwargs) -> MockComponent:
+def create_mock_redis_queue(*_args: Any, **_kwargs: Any) -> MockComponent:
     """Create a mock Redis queue."""
     return MockComponent()
 
 
-def create_mock_redis_voting(*_args, **_kwargs) -> MockComponent:
+def create_mock_redis_voting(*_args: Any, **_kwargs: Any) -> MockComponent:
     """Create a mock Redis voting system."""
     return MockComponent()
 
 
-def create_mock_opa_guard(*_args, **_kwargs) -> MockComponent:
+def create_mock_opa_guard(*_args: Any, **_kwargs: Any) -> MockComponent:
     """Create a mock OPA guard."""
     return MockComponent()
 
 
-def mock_calculate_message_impact(*_args, **_kwargs) -> float:
+def mock_calculate_message_impact(*_args: Any, **_kwargs: Any) -> float:
     """Mock impact calculation returning 0.0."""
     return 0.0
 

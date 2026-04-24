@@ -257,7 +257,7 @@ class SagaState:
 class FileSagaPersistenceProvider:
     """File-based persistence provider for saga state."""
 
-    def __init__(self, base_path: str | Path = "storage/workflow_states"):
+    def __init__(self, base_path: str | Path = "storage/workflow_states") -> None:
         self.base_path = Path(base_path)
         self.base_path.mkdir(parents=True, exist_ok=True)
 

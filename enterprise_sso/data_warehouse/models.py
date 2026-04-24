@@ -225,7 +225,7 @@ class WarehouseConfig:
     ssl_enabled: bool = True
     constitutional_hash: str = CONSTITUTIONAL_HASH
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate configuration after initialization."""
         if self.constitutional_hash != CONSTITUTIONAL_HASH:
             raise ValueError(

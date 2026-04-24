@@ -20,7 +20,7 @@ from .models import Watermark, WatermarkError
 class WatermarkManager:
     """Manages watermarks for incremental data sync."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize watermark manager."""
         self._watermarks: dict[str, Watermark] = {}
         self.constitutional_hash = CONSTITUTIONAL_HASH

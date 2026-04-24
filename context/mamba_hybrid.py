@@ -84,7 +84,7 @@ if TORCH_AVAILABLE:
     class Mamba2SSM(_ModuleBase):  # type: ignore[misc, no-redef, valid-type]
         """Simplified Mamba-2 State Space Model for demonstration."""
 
-        def __init__(self, d_model: int, d_state: int = 128, expand: int = 2):
+        def __init__(self, d_model: int, d_state: int = 128, expand: int = 2) -> None:
             super().__init__()
             self.d_model = d_model
             self.d_state = d_state
@@ -112,7 +112,7 @@ if TORCH_AVAILABLE:
     class SharedAttentionLayer(nn.Module):  # type: ignore[no-redef]
         """Shared attention layer for critical reasoning sections."""
 
-        def __init__(self, d_model: int, num_heads: int = 8):
+        def __init__(self, d_model: int, num_heads: int = 8) -> None:
             super().__init__()
             self.d_model = d_model
             self.num_heads = num_heads
@@ -171,7 +171,7 @@ if TORCH_AVAILABLE:
             max_context_length: int = 10000,
             constitutional_hash: str = CONSTITUTIONAL_HASH,
             precision: str = "float32",
-        ):
+        ) -> None:
             super().__init__()
 
             self.d_model = d_model
@@ -267,7 +267,7 @@ if TORCH_AVAILABLE:
             model_path: str | None = None,
             precision: str = "float32",
             quantize: bool = False,
-        ):
+        ) -> None:
             self.model = ConstitutionalMambaHybrid(precision=precision)
             if model_path:
                 self.load_model(model_path)

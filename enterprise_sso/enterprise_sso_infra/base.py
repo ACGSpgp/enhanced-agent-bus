@@ -17,7 +17,7 @@ from .models import CONSTITUTIONAL_HASH, AuthorizationRequest, ProtocolValidatio
 class BaseProtocolHandler(ABC):
     """Abstract base class for SSO protocol handlers."""
 
-    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         if constitutional_hash != CONSTITUTIONAL_HASH:
             raise ValueError(
                 f"Invalid constitutional hash. Expected {CONSTITUTIONAL_HASH}, "

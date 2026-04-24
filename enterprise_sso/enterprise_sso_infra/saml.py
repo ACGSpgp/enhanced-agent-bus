@@ -58,7 +58,7 @@ class SAML2Handler(BaseProtocolHandler):
         sp_slo_url: str | None = None,
         sp_x509_certificate: str | None = None,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         super().__init__(constitutional_hash)
         self.entity_id = entity_id
         self.sso_url = sso_url

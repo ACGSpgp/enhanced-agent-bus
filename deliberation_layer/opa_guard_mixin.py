@@ -11,7 +11,7 @@ with multi-signature collection and critic agent reviews.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 try:
     from enhanced_agent_bus._compat.types import JSONDict
@@ -183,9 +183,9 @@ class OPAGuardMixin:
         self,
         critic_id: str,
         review_types: list[str],
-        callback: Callable | None = None,
+        callback: Callable[..., Any] | None = None,
         metadata: JSONDict | None = None,
-    ):
+    ) -> None:
         """
         Register a critic agent for reviews.
 
@@ -203,7 +203,7 @@ class OPAGuardMixin:
                 metadata=metadata,
             )
 
-    def unregister_critic_agent(self, critic_id: str):
+    def unregister_critic_agent(self, critic_id: str) -> None:
         """Unregister a critic agent."""
         if self.opa_guard:
             self.opa_guard.unregister_critic_agent(critic_id)

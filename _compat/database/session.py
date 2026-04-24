@@ -10,7 +10,13 @@ else:
     try:
         from src.core.shared.database.session import *  # noqa: F403
     except ImportError:
-        Base: Any = None
+        try:
+            from sqlalchemy.orm import declarative_base
+        except ImportError:
+            Base: Any = None
+        else:
+            Base = declarative_base()
+
         engine: Any = None
         SessionLocal: Any = None
 

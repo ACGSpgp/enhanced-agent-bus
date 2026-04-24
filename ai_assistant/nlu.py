@@ -9,6 +9,7 @@ and sentiment analysis. Integrates with constitutional governance.
 import re
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TypeAlias
@@ -96,7 +97,7 @@ class NLUResult:
     # Convenience parameter for simpler initialization
     intents: list[JSONDict] | None = field(default=None, repr=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Process intents convenience parameter if provided."""
         if self.intents:
             # Convert dict-based intents to Intent objects
@@ -175,7 +176,7 @@ class RuleBasedIntentClassifier(IntentClassifier):
     Can be extended with ML-based classification.
     """
 
-    def __init__(self, intent_patterns: dict[str, list[str]] | None = None):
+    def __init__(self, intent_patterns: dict[str, list[str]] | None = None) -> None:
         self.intent_patterns = intent_patterns or self._default_patterns()
         self._compiled_patterns = self._compile_patterns()
 
@@ -363,7 +364,7 @@ class PatternEntityExtractor(EntityExtractor):
     Can be extended with NER models.
     """
 
-    def __init__(self, custom_patterns: dict[str, str] | None = None):
+    def __init__(self, custom_patterns: dict[str, str] | None = None) -> None:
         self.patterns = self._default_patterns()
         if custom_patterns:
             self.patterns.update(custom_patterns)
@@ -416,14 +417,16 @@ class PatternEntityExtractor(EntityExtractor):
 
     def _normalize_value(self, entity_type: str, raw_value: str) -> JSONValue:
         """Normalize entity value based on type."""
-        normalizers = {
+        normalizers: dict[str, Callable[[str], JSONValue]] = {
             "phone": lambda x: re.sub(r"[^0-9+]", "", x),
             "email": lambda x: x.lower().strip(),
             "number": lambda x: float(x) if "." in x else int(x),
             "money": lambda x: float(x.replace("$", "").replace(",", "")),
         }
 
-        normalizer = normalizers.get(entity_type, lambda x: x)
+        normalizer = normalizers.get(entity_type)
+        if normalizer is None:
+            return raw_value
         try:
             result: JSONValue = normalizer(raw_value)  # type: ignore[assignment]
             return result
@@ -460,7 +463,7 @@ class BasicSentimentAnalyzer(SentimentAnalyzer):
     Can be replaced with ML-based sentiment analysis.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.positive_words = {
             "great",
             "good",
@@ -611,7 +614,7 @@ class NLUEngine:
         sentiment_analyzer: SentimentAnalyzer | None = None,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
         confidence_threshold: float = 0.65,
-    ):
+    ) -> None:
         self.intent_classifier = intent_classifier or RuleBasedIntentClassifier()
         self.entity_extractor = entity_extractor or PatternEntityExtractor()
         self.sentiment_analyzer = sentiment_analyzer or BasicSentimentAnalyzer()

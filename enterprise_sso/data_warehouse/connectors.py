@@ -48,7 +48,7 @@ _WAREHOUSE_CONNECTOR_ERRORS = (
 class DataWarehouseConnector(ABC):
     """Abstract base class for data warehouse connectors."""
 
-    def __init__(self, config: WarehouseConfig):
+    def __init__(self, config: WarehouseConfig) -> None:
         """Initialize connector with configuration."""
         if config.constitutional_hash != CONSTITUTIONAL_HASH:
             raise ValueError(f"Invalid constitutional hash: {config.constitutional_hash}")
@@ -119,7 +119,7 @@ class DataWarehouseConnector(ABC):
 class MockConnection:
     """Mock connection for testing."""
 
-    def __init__(self, warehouse_type: WarehouseType, config: WarehouseConfig):
+    def __init__(self, warehouse_type: WarehouseType, config: WarehouseConfig) -> None:
         """Initialize mock connection."""
         self.warehouse_type = warehouse_type
         self.config = config
@@ -183,7 +183,7 @@ class MockConnection:
 class SnowflakeConnector(DataWarehouseConnector):
     """Snowflake data warehouse connector."""
 
-    def __init__(self, config: SnowflakeConfig):
+    def __init__(self, config: SnowflakeConfig) -> None:
         """Initialize Snowflake connector."""
         super().__init__(config)
         self.snowflake_config = config
@@ -297,7 +297,7 @@ class SnowflakeConnector(DataWarehouseConnector):
 class RedshiftConnector(DataWarehouseConnector):
     """Amazon Redshift data warehouse connector."""
 
-    def __init__(self, config: RedshiftConfig):
+    def __init__(self, config: RedshiftConfig) -> None:
         """Initialize Redshift connector."""
         super().__init__(config)
         self.redshift_config = config
@@ -444,7 +444,7 @@ class RedshiftConnector(DataWarehouseConnector):
 class BigQueryConnector(DataWarehouseConnector):
     """Google BigQuery data warehouse connector."""
 
-    def __init__(self, config: BigQueryConfig):
+    def __init__(self, config: BigQueryConfig) -> None:
         """Initialize BigQuery connector."""
         super().__init__(config)
         self.bq_config = config

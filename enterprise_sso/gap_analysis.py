@@ -200,7 +200,7 @@ class ConstitutionalPolicyScanner:
         },
     }
 
-    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.constitutional_hash = constitutional_hash
         self._scans: dict[str, ScanResult] = {}
 
@@ -359,7 +359,7 @@ class GapClassifier:
         GapCategory.NO_CONSTITUTIONAL_CHECK: 1.0,
     }
 
-    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.constitutional_hash = constitutional_hash
 
     def calculate_priority_score(self, gap: ConstitutionalGap) -> float:
@@ -490,7 +490,7 @@ class PolicyInput(BaseModel):
         },
     }
 
-    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.constitutional_hash = constitutional_hash
 
     def generate_suggestion(self, gap: ConstitutionalGap) -> RemediationSuggestion:
@@ -531,7 +531,7 @@ class PolicyInput(BaseModel):
 class GapTracker:
     """Tracks gap status and closure metrics."""
 
-    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.constitutional_hash = constitutional_hash
         self._gaps: dict[str, ConstitutionalGap] = {}
         self._resolution_times: list[float] = []

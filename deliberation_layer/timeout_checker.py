@@ -47,7 +47,7 @@ class TimeoutChecker:
     and publishes escalation events to Kafka audit topic.
     """
 
-    def __init__(self, kafka_bus: object | None = None):
+    def __init__(self, kafka_bus: object | None = None) -> None:
         """
         Initialize timeout checker.
 

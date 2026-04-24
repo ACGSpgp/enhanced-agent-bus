@@ -256,18 +256,3 @@ disallow_any_generics = false
 disallow_incomplete_defs = true
 disallow_untyped_defs = true
 no_implicit_optional = true
-
-# Grandfathered modules with pre-existing untyped defs — fix incrementally.
-[[tool.mypy.overrides]]
-module = [
-    "enhanced_agent_bus._ext_*",
-    "enhanced_agent_bus.deliberation_layer.*",
-    "enhanced_agent_bus.llm_adapters.*",
-    "enhanced_agent_bus.enterprise_sso.*",
-    "enhanced_agent_bus.cognitive.*",
-    "enhanced_agent_bus.ai_assistant.*",
-    "enhanced_agent_bus.context.*",
-    "enhanced_agent_bus.langgraph_orchestration.*",
-]
-disallow_untyped_defs = false
-disallow_incomplete_defs = false

@@ -35,7 +35,28 @@ PLUGINS: dict[str, str] = {
     "pandas": "pandas",
     "sklearn": "sklearn.ensemble",
     "z3": "z3",
+    # Optional _ext_* extension modules (US-006).
+    "_ext_browser_tool": "enhanced_agent_bus._ext_browser_tool",
+    "_ext_cache_warming": "enhanced_agent_bus._ext_cache_warming",
+    "_ext_chaos": "enhanced_agent_bus._ext_chaos",
+    "_ext_circuit_breaker": "enhanced_agent_bus._ext_circuit_breaker",
+    "_ext_circuit_breaker_clients": "enhanced_agent_bus._ext_circuit_breaker_clients",
+    "_ext_cognee": "enhanced_agent_bus._ext_cognee",
+    "_ext_cognitive": "enhanced_agent_bus._ext_cognitive",
+    "_ext_context_memory": "enhanced_agent_bus._ext_context_memory",
+    "_ext_context_optimization": "enhanced_agent_bus._ext_context_optimization",
+    "_ext_decision_store": "enhanced_agent_bus._ext_decision_store",
+    "_ext_explanation_service": "enhanced_agent_bus._ext_explanation_service",
+    "_ext_langgraph": "enhanced_agent_bus._ext_langgraph",
+    "_ext_mcp": "enhanced_agent_bus._ext_mcp",
+    "_ext_performance": "enhanced_agent_bus._ext_performance",
+    "_ext_persistence": "enhanced_agent_bus._ext_persistence",
+    "_ext_pqc": "enhanced_agent_bus._ext_pqc",
+    "_ext_response_quality": "enhanced_agent_bus._ext_response_quality",
+    "_ext_spacetimedb": "enhanced_agent_bus._ext_spacetimedb",
 }
+
+EXT_MODULES: list[str] = [k for k in PLUGINS if k.startswith("_ext_")]
 
 EXTRAS: dict[str, str] = {
     "mlflow": "mlflow",
@@ -65,4 +86,18 @@ def require(name: str) -> str:
     return module_path
 
 
-__all__ = ["EXTRAS", "PLUGINS", "PluginNotAvailable", "available", "require"]
+def load_status() -> dict[str, bool]:
+    """Return availability status for every registered extension module."""
+
+    return {name: available(name) for name in EXT_MODULES}
+
+
+__all__ = [
+    "EXTRAS",
+    "EXT_MODULES",
+    "PLUGINS",
+    "PluginNotAvailable",
+    "available",
+    "load_status",
+    "require",
+]
