@@ -4,6 +4,8 @@
 
 set -euo pipefail
 
+command -v python3 >/dev/null 2>&1 || { echo "[eab-guard] python3 not found — blocking as fail-closed" >&2; exit 2; }
+
 HOOK_INPUT=$(cat)
 
 python3 - "$HOOK_INPUT" <<'PY'
@@ -14,8 +16,9 @@ from pathlib import Path
 
 try:
     payload = json.loads(sys.argv[1])
-except json.JSONDecodeError:
-    sys.exit(0)
+except (json.JSONDecodeError, IndexError):
+    print("[eab-guard] malformed or missing payload — blocking as fail-closed", file=sys.stderr)
+    sys.exit(2)
 
 tool_input = payload.get("tool_input") or {}
 records: list[tuple[str, str]] = []
