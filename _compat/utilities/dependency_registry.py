@@ -96,7 +96,8 @@ else:
 
             @classmethod
             def initialize_defaults(cls) -> None:
-                """No-op in standalone mode — monorepo registers real defaults."""
+                """Register standalone defaults for locally provided fail-closed stubs."""
+                cls._feature_status.setdefault(FeatureFlag.MACI, True)
                 cls._initialized = True
 
             @classmethod
