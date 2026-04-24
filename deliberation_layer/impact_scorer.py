@@ -151,7 +151,7 @@ def _build_ort_session() -> "tuple[Any, Any] | None":
     _os2.makedirs(_os2.path.dirname(cache_path), exist_ok=True)
 
     try:
-        from transformers import AutoTokenizer, AutoModel
+        from transformers import AutoModel, AutoTokenizer
 
         tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased", use_fast=True)
 
@@ -184,7 +184,7 @@ def _build_ort_session() -> "tuple[Any, Any] | None":
 
             # Quantize to int8
             logger.info("ImpactScorer: quantizing to int8...")
-            from onnxruntime.quantization import quantize_dynamic, QuantType
+            from onnxruntime.quantization import QuantType, quantize_dynamic
             quantize_dynamic(fp32_path, cache_path, weight_type=QuantType.QInt8)
             logger.info("ImpactScorer: int8 quantization done → %s", cache_path)
 
@@ -209,10 +209,11 @@ def get_impact_scorer(config: ScoringConfig | None = None, **kwargs: Any) -> "Im
     if _impact_scorer_instance is None:
         # Auto-configure structured logging if not already set up
         try:
+            import logging as _logging
+
             from enhanced_agent_bus.observability.structured_logging import (
                 configure_structured_logging,
             )
-            import logging as _logging
             if not _logging.getLogger().handlers:
                 configure_structured_logging()
         except Exception:
