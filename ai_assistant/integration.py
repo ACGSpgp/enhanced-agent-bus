@@ -10,7 +10,7 @@ import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timezone
-from typing import TypeAlias
+from typing import Any, TypeAlias
 
 # Policy imports
 from enhanced_agent_bus._compat.policy.models import PolicySpecification, VerificationStatus
@@ -119,10 +119,10 @@ class AgentBusIntegration:
     Integration layer for the Enhanced Agent Bus.
     """
 
-    def __init__(self, config: IntegrationConfig | None = None, agent_bus=None):
+    def __init__(self, config: IntegrationConfig | None = None, agent_bus: Any = None) -> None:
         self.config = config or IntegrationConfig()
         self.agent_bus = agent_bus
-        self.handlers: dict[str, Callable] = {}
+        self.handlers: dict[str, Callable[..., Any]] = {}
         self.policy_generator = UnifiedVerifiedPolicyGenerator()
 
     async def initialize(self) -> bool:
@@ -138,7 +138,11 @@ class AgentBusIntegration:
         logger.info(f"Initialized Agent Bus integration for {self.config.agent_id}")
         return True
 
-    def register_handler(self, message_type: str, handler: Callable):
+    def register_handler(
+        self,
+        message_type: str,
+        handler: Callable[..., Any],
+    ) -> None:
         """Register a handler for a specific message type."""
         self.handlers[message_type] = handler
 

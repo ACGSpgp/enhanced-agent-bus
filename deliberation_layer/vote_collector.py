@@ -338,7 +338,7 @@ class EventDrivenVoteCollector:
         redis_url: str | None = None,
         channel_prefix: str = "acgs:votes",
         max_concurrent_sessions: int = 1000,
-    ):
+    ) -> None:
         self.redis_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379")
         self.channel_prefix = channel_prefix
         self.max_concurrent_sessions = max_concurrent_sessions

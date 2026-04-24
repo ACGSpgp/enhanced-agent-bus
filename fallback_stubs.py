@@ -103,6 +103,8 @@ class StubLimiter:
     """Mock Limiter for when slowapi is not available."""
 
     def __init__(self, *args: object, **kwargs: object) -> None:
+        if IS_PRODUCTION:
+            require_dependency("slowapi", available=False)
         self._limiter = _StubInnerLimiter()
 
     def limit(
@@ -274,7 +276,10 @@ class StubTenantContextMiddleware:
             and self.config.required
             and not self.config.fail_open
         ):
-            # P0-5: Harden fallback stub to fail-closed in production/secure modes
+            # RESOLVED (P0-5): Fail-closed for tenant context in production/secure modes.
+            # When config.required=True and config.fail_open=False, all requests are
+            # rejected with HTTP 400 (SECURITY_FALLBACK_REJECTED). A missing shared
+            # security package in production is a hard failure, not a degraded mode.
             from starlette.responses import JSONResponse
 
             response = JSONResponse(

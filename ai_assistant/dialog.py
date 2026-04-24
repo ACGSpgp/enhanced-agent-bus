@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TypeAlias
+from typing import Any, TypeAlias
 
 # Import centralized constitutional hash with fallback
 try:
@@ -70,7 +70,7 @@ class FlowNode:
     id: str
     name: str
     node_type: str  # 'response', 'question', 'validation', 'action', 'condition'
-    content: str | Callable | None = None
+    content: str | Callable[..., Any] | None = None
     next_node: str | None = None
     transitions: dict[str, str] = field(default_factory=dict)  # condition -> next_node_id
     timeout_seconds: int = 30
@@ -147,7 +147,7 @@ class RuleBasedDialogPolicy(DialogPolicy):
     Simple but effective for well-defined conversation patterns.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.intent_actions: dict[str, DialogAction] = self._default_intent_actions()
         self.fallback_responses = self._default_fallback_responses()
 
@@ -333,7 +333,7 @@ class RuleBasedDialogPolicy(DialogPolicy):
             response_template=f"I need a valid {current_slot}. Please try again.",
         )
 
-    def _entity_matches_slot(self, entity, slot: str) -> bool:
+    def _entity_matches_slot(self, entity: Entity, slot: str) -> bool:
         """Check if entity type matches expected slot."""
         type_mappings = {
             "order_id": ["order_id", "product_code", "number"],
@@ -385,11 +385,11 @@ class DialogManager:
         policy: DialogPolicy | None = None,
         flows: list[ConversationFlow] | None = None,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         self.policy = policy or RuleBasedDialogPolicy()
         self.flows = {f.id: f for f in (flows or [])}
         self.constitutional_hash = constitutional_hash
-        self._action_handlers: dict[ActionType, Callable] = {}
+        self._action_handlers: dict[ActionType, Callable[..., Any]] = {}
 
     async def process_turn(
         self,
@@ -603,11 +603,11 @@ class DialogManager:
         """Execute a dialog action."""
         # Check for registered handler
         if action.action_type in self._action_handlers:
-            handler = self._action_handlers[action.action_type]
-            return await handler(action, context, nlu_result)  # type: ignore[no-any-return]
+            custom_handler = self._action_handlers[action.action_type]
+            return await custom_handler(action, context, nlu_result)  # type: ignore[no-any-return]
 
         # Use lookup table for default action handlers
-        action_handlers = {
+        action_handlers: dict[ActionType, Callable[[DialogAction, ConversationContext], JSONDict]] = {
             ActionType.RESPOND: self._handle_respond_action,
             ActionType.ASK_QUESTION: self._handle_ask_question_action,
             ActionType.CONFIRM: self._handle_confirm_action,
@@ -618,9 +618,9 @@ class DialogManager:
             ActionType.END_CONVERSATION: self._handle_end_conversation_action,
         }
 
-        handler = action_handlers.get(action.action_type)
-        if handler:
-            return handler(action, context)
+        default_handler = action_handlers.get(action.action_type)
+        if default_handler:
+            return default_handler(action, context)
 
         return {"response": action.response_template or ""}
 
@@ -697,7 +697,7 @@ class DialogManager:
     def register_action_handler(
         self,
         action_type: ActionType,
-        handler: Callable,
+        handler: Callable[..., Any],
     ) -> None:
         """Register a custom action handler."""
         self._action_handlers[action_type] = handler

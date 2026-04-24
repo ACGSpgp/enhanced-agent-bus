@@ -94,7 +94,7 @@ class SSOIntegrationError(ACGSBaseError):
         message: str,
         error_code: str = "SSO_ERROR",
         details: JSONDict | None = None,
-    ):
+    ) -> None:
         self.error_code = error_code  # Instance attribute (SSO-specific error code)
         details_dict = details or {}
         super().__init__(message, details={**details_dict, "sso_error_code": error_code})

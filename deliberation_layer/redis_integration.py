@@ -102,7 +102,7 @@ class DeliberationMessageProtocol(Protocol):
 class RedisDeliberationQueue:
     """Redis-backed deliberation queue for persistence and scalability."""
 
-    def __init__(self, redis_url: str = "redis://localhost:6379"):
+    def __init__(self, redis_url: str = "redis://localhost:6379") -> None:
         self.redis_url = redis_url
         self.redis_client: RedisClientProtocol | None = None
         self.stream_key = "acgs:deliberation:stream"
@@ -269,7 +269,7 @@ class RedisVotingSystem:
     Supports both traditional polling and event-driven pub/sub voting.
     """
 
-    def __init__(self, redis_url: str = "redis://localhost:6379"):
+    def __init__(self, redis_url: str = "redis://localhost:6379") -> None:
         self.redis_url = redis_url
         self.redis_client: RedisClientProtocol | None = None
         self.votes_key_prefix = "acgs:votes:"

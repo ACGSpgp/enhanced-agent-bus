@@ -21,17 +21,17 @@ else:
 from enhanced_agent_bus.observability.structured_logging import get_logger
 
 # Local imports
-from .config import BusConfiguration
-from .dependency_bridge import get_dependency, get_feature_flags, is_feature_available
-from .gate_coordinator import GateCoordinator
-from .governance_constants import (
+from ..config import BusConfiguration
+from ..dependency_bridge import get_dependency, get_feature_flags, is_feature_available
+from ..gate_coordinator import GateCoordinator
+from ..governance_constants import (
     DEFAULT_CB_FAIL_MAX,
     DEFAULT_CB_RESET_TIMEOUT,
     DEFAULT_LRU_CACHE_SIZE,
     IMPACT_DELIBERATION_THRESHOLD,
 )
-from .governance_coordinator import GovernanceCoordinator
-from .governance_core import (
+from ..governance_coordinator import GovernanceCoordinator
+from ..governance_core import (
     GovernanceDecision,
     GovernanceInput,
     GovernanceReceipt,
@@ -39,7 +39,7 @@ from .governance_core import (
     SwarmGovernanceCore,
     normalize_governance_core_mode,
 )
-from .tee_attestation import LocalTeeAttestationProvider, SgxQuoteAttestationProvider
+from ..tee_attestation import LocalTeeAttestationProvider, SgxQuoteAttestationProvider
 
 # Feature flags
 _flags = get_feature_flags()
@@ -77,7 +77,7 @@ else:
 
 try:
     _metering_integration: Any | None
-    from . import metering_integration as _metering_integration
+    from .. import metering_integration as _metering_integration
 except ImportError:
     _metering_integration = None
 
@@ -93,7 +93,7 @@ else:
 
 try:
     _opa_client_module: Any | None
-    from . import opa_client as _opa_client_module
+    from .. import opa_client as _opa_client_module
 except ImportError:
     _opa_client_module = None
 
@@ -118,7 +118,7 @@ _OPAClient: Any = _ImportedOPAClient
 
 try:
     _policy_client_module: Any | None
-    from . import policy_client as _policy_client_module
+    from .. import policy_client as _policy_client_module
 except ImportError:
     _policy_client_module = None
 
@@ -164,9 +164,9 @@ except ImportError:
     MCPConfig = None
     MCPToolResult = None
 
-from .interfaces import ProcessingStrategy
-from .memory_profiler import ProfilingLevel, get_memory_profiler
-from .message_processor_components import (
+from ..interfaces import ProcessingStrategy
+from ..memory_profiler import ProfilingLevel, get_memory_profiler
+from ..message_processor_components import (
     compute_message_cache_key,
     enforce_autonomy_tier_rules,
     enrich_metrics_with_opa_stats,
@@ -175,7 +175,7 @@ from .message_processor_components import (
     extract_session_id_for_pacar,
     schedule_background_task,
 )
-from .models import (
+from ..models import (
     CONSTITUTIONAL_HASH,
     AgentMessage,
     AutonomyTier,
@@ -184,21 +184,21 @@ from .models import (
     Priority,
     get_enum_value,
 )
-from .performance_monitor import timed
-from .processing_context import MessageProcessingContext
-from .result_finalizer import ResultFinalizer
-from .runtime_security import get_runtime_security_scanner
-from .security_scanner import (
+from ..performance_monitor import timed
+from ..processing_context import MessageProcessingContext
+from ..result_finalizer import ResultFinalizer
+from ..runtime_security import get_runtime_security_scanner
+from ..security_scanner import (
     PROMPT_INJECTION_PATTERNS,
     MessageSecurityScanner,
 )
-from .session_context import SessionContext, SessionContextManager
-from .session_context_resolver import SessionContextResolver
-from .session_coordinator import SessionCoordinator
-from .utils import LRUCache
-from .validators import ValidationResult
-from .verification_coordinator import VerificationCoordinator
-from .verification_orchestrator import (
+from ..session_context import SessionContext, SessionContextManager
+from ..session_context_resolver import SessionContextResolver
+from ..session_coordinator import SessionCoordinator
+from ..utils import LRUCache
+from ..validators import ValidationResult
+from ..verification_coordinator import VerificationCoordinator
+from ..verification_orchestrator import (
     VerificationOrchestrator,
     VerificationRuntimeDependencies,
 )

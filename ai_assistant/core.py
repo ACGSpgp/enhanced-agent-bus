@@ -177,7 +177,7 @@ class AIAssistant:
         dialog_manager: DialogManager | None = None,
         response_generator: ResponseGenerator | None = None,
         integration: AgentBusIntegration | None = None,
-    ):
+    ) -> None:
         """
         Initialize the AI Assistant.
 

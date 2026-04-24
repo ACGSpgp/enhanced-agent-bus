@@ -196,7 +196,7 @@ class InMemoryHITLHandler:
     Constitutional Hash: 608508a9bd224290
     """
 
-    def __init__(self, auto_response: HITLAction | None = None):
+    def __init__(self, auto_response: HITLAction | None = None) -> None:
         self.pending_requests: dict[str, HITLRequest] = {}
         self.responses: dict[str, HITLResponse] = {}
         self._response_events: dict[str, asyncio.Event] = {}

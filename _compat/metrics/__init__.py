@@ -5,7 +5,11 @@ from __future__ import annotations
 from typing import Any
 
 from ._registry import *  # noqa: F403
-from ._registry import _get_or_create_counter, _get_or_create_gauge, _get_or_create_histogram
+from ._registry import (  # type: ignore[attr-defined]
+    _get_or_create_counter,
+    _get_or_create_gauge,
+    _get_or_create_histogram,
+)
 
 try:
     from src.core.shared.metrics import *  # noqa: F403
@@ -48,8 +52,17 @@ except ImportError:
     MESSAGES_PROCESSED_TOTAL = _NoOpMetric()
     ACTIVE_CONNECTIONS = _NoOpMetric()
 
+    def set_service_info(
+        service_name: str,
+        service_version: str,
+        constitutional_hash: str,
+    ) -> None:
+        """Discard service metadata when shared metrics are unavailable."""
+        _ = (service_name, service_version, constitutional_hash)
+
 __all__ = [
     "_get_or_create_counter",
     "_get_or_create_gauge",
     "_get_or_create_histogram",
+    "set_service_info",
 ]

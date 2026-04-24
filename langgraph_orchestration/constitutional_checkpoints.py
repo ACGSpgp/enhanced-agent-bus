@@ -88,7 +88,7 @@ class ConstitutionalHashValidator(CheckpointValidator):
     Constitutional Hash: 608508a9bd224290
     """
 
-    def __init__(self, expected_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, expected_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.expected_hash = expected_hash
 
     async def validate(
@@ -163,7 +163,7 @@ class MACIRoleValidator(CheckpointValidator):
     Constitutional Hash: 608508a9bd224290
     """
 
-    def __init__(self, maci_enforcer: object | None = None):
+    def __init__(self, maci_enforcer: object | None = None) -> None:
         self.maci_enforcer = maci_enforcer
 
     async def validate(
@@ -214,7 +214,7 @@ class ConstitutionalCheckpoint:
         step_index: int,
         state: GraphState,
         metadata: JSONDict | None = None,
-    ):
+    ) -> None:
         self.checkpoint = Checkpoint(
             id=str(uuid.uuid4()),
             workflow_id=workflow_id,

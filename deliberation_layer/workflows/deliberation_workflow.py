@@ -203,7 +203,7 @@ class DefaultDeliberationActivities:
     def __init__(
         self,
         hash_validator: ConstitutionalHashValidatorProtocol | None = None,
-    ):
+    ) -> None:
         self._opa_client = None
         self._impact_scorer = None
         self._audit_client: _AuditClientProtocol | None = None
@@ -451,7 +451,7 @@ class DeliberationWorkflow:
     Workflow logic must be deterministic.
     """
 
-    def __init__(self, workflow_id: str, activities: DefaultDeliberationActivities | None = None):
+    def __init__(self, workflow_id: str, activities: DefaultDeliberationActivities | None = None) -> None:
         self.workflow_id = workflow_id
         self.activities = activities or DefaultDeliberationActivities()
 

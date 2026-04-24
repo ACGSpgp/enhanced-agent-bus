@@ -1,0 +1,121 @@
+{
+  "name": "ralplan-eab-full-audit",
+  "description": "Execute 8-category remediation plan for enhanced_agent_bus per .omc/plans/ralplan-eab-full-audit.md. Execution order (safest-first): Cat 1 \u2192 Cat 7 \u2192 Cat 8 \u2192 Cat 2 \u2192 Cat 3 \u2192 Cat 4 \u2192 Cat 5 \u2192 Cat 6.",
+  "plan_source": ".omc/plans/ralplan-eab-full-audit.md",
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "Cat 1: Add test coverage for 5 zero-test subsystems",
+      "priority": 1,
+      "passes": true,
+      "acceptanceCriteria": [
+        "tests/test__compat_coverage.py exists and all tests pass",
+        "tests/test_adaptive_governance_coverage.py exists and all tests pass",
+        "tests/test_agent_health_coverage.py exists and all tests pass",
+        "tests/test_circuit_breaker_coverage.py exists and all tests pass",
+        "tests/test_opa_client_coverage.py exists and all tests pass",
+        "Each new test file covers at least 3 meaningful assertions (not smoke-only)",
+        "pytest tests/test__compat_coverage.py tests/test_adaptive_governance_coverage.py tests/test_agent_health_coverage.py tests/test_circuit_breaker_coverage.py tests/test_opa_client_coverage.py -v returns exit 0"
+      ]
+    },
+    {
+      "id": "US-002",
+      "title": "Cat 7: LLM adapter conformance (remove mypy override line + add 8-test conformance file)",
+      "priority": 2,
+      "passes": true,
+      "acceptanceCriteria": [
+        "tests/test_llm_adapter_conformance.py exists with 8 tests (7 adapter subclass + 1 abstract)",
+        "Tests cover BedrockAdapter, AnthropicAdapter, OpenAIAdapter, AzureOpenAIAdapter, HuggingFaceAdapter, OpenClawAdapter, XAIAdapter, and BaseLLMAdapter.isabstract",
+        "pyproject.toml: ONLY the 'enhanced_agent_bus.llm_adapters.*' line removed from the combined [[tool.mypy.overrides]] block; all other entries remain",
+        "pytest tests/test_llm_adapter_conformance.py -v returns exit 0 with 8 passed",
+        "mypy enhanced_agent_bus/llm_adapters/ --no-error-summary returns 0 errors"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Cat 8: OPA fail-closed timeout test",
+      "priority": 3,
+      "passes": true,
+      "acceptanceCriteria": [
+        "tests/test_opa_fail_closed.py includes a timeout test that mocks OPA and asserts check_agent_authorization() returns False on timeout",
+        "grep for return True inside check_agent_authorization() and evaluate_policy() functions in opa_client/core.py returns 0 hits",
+        "Management methods (load_policy, load_bundle_from_url, _rollback_to_lkg) remain unchanged",
+        "pytest tests/test_opa_fail_closed.py -v returns exit 0"
+      ],
+      "note": "Tests placed in new test_opa_fail_closed.py (not test_opa_client_coverage.py) because existing file is env-gated with skipif; fail-closed security invariants must run unconditionally."
+    },
+    {
+      "id": "US-004",
+      "title": "Cat 2: Lift 3 grandfathered mypy overrides",
+      "priority": 4,
+      "passes": true,
+      "acceptanceCriteria": [
+        "_ext_pqc.py has type annotations on all public functions (TYPE_CHECKING-guarded stubs with # type: ignore[assignment] where needed)",
+        "_ext_decision_store.py has type annotations on all public functions",
+        "deliberation_layer/*.py (excluding dashboard.py, impact_scorer.py, __init__.py) have type annotations",
+        "pyproject.toml: 'enhanced_agent_bus._ext_*' glob replaced with explicit 16-entry list (18 _ext_* files minus _ext_pqc and _ext_decision_store)",
+        "pyproject.toml: 'enhanced_agent_bus.deliberation_layer.*' entry removed from override block",
+        "mypy enhanced_agent_bus/_ext_pqc.py enhanced_agent_bus/_ext_decision_store.py enhanced_agent_bus/deliberation_layer/ --disallow-untyped-defs returns 0 errors"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Cat 3: Harden fallback_stubs.py slowapi",
+      "priority": 5,
+      "passes": true,
+      "acceptanceCriteria": [
+        "StubLimiter.__init__ in fallback_stubs.py calls require_dependency('slowapi', available=False) when IS_PRODUCTION is True",
+        "tests/test_fallback_stubs_production.py exists with test that uses monkeypatch.setattr(fs, 'IS_PRODUCTION', True) + fs.StubLimiter() + pytest.raises(DependencyNotAvailableError)",
+        "pytest tests/test_fallback_stubs_production.py -v returns exit 0"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Cat 4: Extension registry entries for all 18 _ext_* modules",
+      "priority": 6,
+      "passes": true,
+      "acceptanceCriteria": [
+        "plugin_registry.py registers all 18 _ext_* modules using find_spec() (not import_module)",
+        "Each entry has a name, module path, and availability check via find_spec",
+        "tests/test_plugin_registry_ext.py covers registration and .get() behavior for at least 3 entries",
+        "pytest tests/test_plugin_registry_ext.py -v returns exit 0"
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "Cat 5: Split message_processor.py into message_processor/ package",
+      "priority": 7,
+      "passes": true,
+      "acceptanceCriteria": [
+        "git tag pre-cat5-split created as rollback checkpoint before starting",
+        "message_processor.py (file) DELETED",
+        "message_processor/ directory created with __init__.py that re-exports MessageProcessor as a shim",
+        "Methods split into submodules per the plan's method-to-submodule mapping table",
+        "python -c 'from enhanced_agent_bus.message_processor import MessageProcessor' succeeds",
+        "tests/conftest.py at line 264 bare import still works",
+        "pytest -k message_processor -v returns exit 0 with no regressions"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Cat 6: Split routes/tenants.py into routes/tenants/ package",
+      "priority": 8,
+      "passes": true,
+      "acceptanceCriteria": [
+        "git tag pre-cat6-split created as rollback checkpoint before starting",
+        "OpenAPI schema snapshot saved to /tmp/pre_split_schema.json before starting",
+        "routes/tenants.py (file) DELETED",
+        "routes/tenants/ directory contains: __init__.py, _shared.py, crud.py, lifecycle.py, quota.py, hierarchy.py",
+        "__init__.py aggregator uses APIRouter(prefix='/api/v1/tenants', tags=['Tenant Management'])",
+        "Sub-routers use APIRouter() with no prefix",
+        "crud.py contains endpoints from lines 720-997 (CRUD Operations)",
+        "lifecycle.py contains endpoints from lines 999-1139 (Lifecycle Management)",
+        "quota.py contains endpoints from lines 1141-1351 (Quota Management)",
+        "hierarchy.py contains endpoints from lines 1353-end (Hierarchy Management)",
+        "python -c 'from enhanced_agent_bus.routes.tenants import router' succeeds",
+        "OpenAPI schema diff (post vs pre) shows zero changes for /api/v1/tenants/* routes",
+        "pytest -k tenant -v returns exit 0 with no regressions"
+      ]
+    }
+  ]
+}

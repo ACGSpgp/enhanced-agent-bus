@@ -12,8 +12,6 @@ import os
 from dataclasses import dataclass
 from typing import Any, Protocol, TypeAlias
 
-from cryptography.hazmat.primitives.asymmetric import ed25519
-
 try:
     from enhanced_agent_bus._compat.types import JSONDict
 except ImportError:
@@ -38,6 +36,14 @@ class LocalEd25519SigningProvider:
     algorithm: str = "ed25519"
 
     def sign(self, payload: bytes) -> bytes:
+        try:
+            from cryptography.hazmat.primitives.asymmetric import ed25519
+        except ImportError as exc:
+            raise RuntimeError(
+                "cryptography is required for local Ed25519 signing; "
+                "install enhanced-agent-bus[pqc] or configure ACGS_SIGNING_HSM_SECRET"
+            ) from exc
+
         private_key = ed25519.Ed25519PrivateKey.from_private_bytes(
             bytes.fromhex(self.private_key_hex)
         )

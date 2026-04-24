@@ -150,7 +150,7 @@ class OPAGuard:
         review_timeout: int = 300,
         high_risk_threshold: float = 0.8,
         critical_risk_threshold: float = 0.95,
-    ):
+    ) -> None:
         """
         Initialize OPA Guard.
 

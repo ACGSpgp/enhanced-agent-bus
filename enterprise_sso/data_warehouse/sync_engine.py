@@ -77,7 +77,7 @@ class DataSyncEngine:
         self,
         source_connector: DataWarehouseConnector,
         target_connector: DataWarehouseConnector,
-    ):
+    ) -> None:
         """Initialize sync engine."""
         self.source = source_connector
         self.target = target_connector
@@ -290,7 +290,7 @@ class DataSyncEngine:
 class SyncScheduler:
     """Scheduler for automated data sync jobs."""
 
-    def __init__(self, sync_engine: DataSyncEngine):
+    def __init__(self, sync_engine: DataSyncEngine) -> None:
         """Initialize scheduler."""
         self.engine = sync_engine
         self._schedules: dict[str, tuple[SyncConfig, ScheduleConfig]] = {}

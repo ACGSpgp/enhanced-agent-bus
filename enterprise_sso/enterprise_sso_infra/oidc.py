@@ -51,7 +51,7 @@ class OIDCHandler(BaseProtocolHandler):
         scopes: list[str] | None = None,
         use_pkce: bool = True,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         super().__init__(constitutional_hash)
         self.issuer = issuer.rstrip("/")
         self.client_id = client_id

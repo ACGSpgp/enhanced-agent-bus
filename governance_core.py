@@ -14,7 +14,10 @@ from typing import Any, Literal, Protocol, TypeAlias, cast
 
 JSONDict: TypeAlias = dict[str, Any]
 
-from enhanced_agent_bus.governance.danger_signal import DangerSignalAnalyzer
+from enhanced_agent_bus.governance.danger_signal import (
+    AdaptiveQuorumDecision,
+    DangerSignalAnalyzer,
+)
 from enhanced_agent_bus.observability.structured_logging import get_logger
 
 from .validators import validate_constitutional_hash
@@ -42,9 +45,13 @@ try:
         raise AttributeError("constitutional_swarm is missing required exports")
 
     SWARM_AVAILABLE = True
-except (ImportError, AttributeError) as exc:
+except (ImportError, AttributeError, SyntaxError) as exc:
     SWARM_IMPORT_ERROR = exc
     SWARM_AVAILABLE = False
+    Constitution = None
+    ConstitutionalMesh = None
+    AgentDNA = None
+    ConstitutionalViolationError = Exception
 else:
     Constitution = _Constitution
     ConstitutionalMesh = _ConstitutionalMesh
@@ -538,7 +545,9 @@ class SwarmGovernanceCore:
             return None
         return self._constitution.hash
 
-    def _resolve_required_quorum(self, governance_input: GovernanceInput, validator_count: int):
+    def _resolve_required_quorum(
+        self, governance_input: GovernanceInput, validator_count: int
+    ) -> AdaptiveQuorumDecision:
         default = self._danger_signal_analyzer.analyze(
             content=governance_input.content,
             action_type=governance_input.action_type,

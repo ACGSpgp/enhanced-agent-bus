@@ -25,14 +25,11 @@ BATCH_PROCESSING_RETRY_ERRORS = (
     AttributeError,
     asyncio.TimeoutError,
 )
-BATCH_WORKER_ERRORS = (
-    RuntimeError,
-    ValueError,
-    TypeError,
-    KeyError,
-    AttributeError,
-    asyncio.TimeoutError,
-)
+# BATCH_WORKER_ERRORS is an intentional alias — the retry loop and the outer worker
+# loop catch the same exception types today, but each call site reads a name that
+# matches its context. Keep both names so the two handlers can diverge independently
+# without touching the other.
+BATCH_WORKER_ERRORS = BATCH_PROCESSING_RETRY_ERRORS
 
 
 class WorkerPool:

@@ -32,7 +32,7 @@ SCHEMA_CHANGE_APPLICATION_ERRORS = (
 class SchemaEvolutionManager:
     """Manages schema evolution across source and target."""
 
-    def __init__(self, connector: "DataWarehouseConnector"):
+    def __init__(self, connector: "DataWarehouseConnector") -> None:
         """Initialize schema evolution manager."""
         self.connector = connector
         self._pending_changes: list[SchemaChange] = []

@@ -30,7 +30,7 @@ except ImportError:
 
 from enhanced_agent_bus.observability.structured_logging import get_logger
 
-from .models.tenant_models import (
+from ..models.tenant_models import (
     CreateTenantRequest,
     ErrorResponse,
     QuotaCheckRequest,
@@ -46,7 +46,7 @@ from .models.tenant_models import (
 )
 
 try:
-    from ..multi_tenancy import (
+    from ...multi_tenancy import (
         Tenant,
         TenantConfig,
         TenantManager,

@@ -19,6 +19,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum
+from typing import Any
 
 try:
     from enhanced_agent_bus._compat.constants import CONSTITUTIONAL_HASH
@@ -169,11 +170,11 @@ class PDFReport:
 class MigrationJobManager:
     """Manages migration jobs for tenants."""
 
-    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.constitutional_hash = constitutional_hash
         self._jobs: dict[str, MigrationJob] = {}
         self._results: dict[str, MigrationJobResult] = {}
-        self._job_callbacks: dict[str, Callable] = {}
+        self._job_callbacks: dict[str, Callable[..., Any]] = {}
 
     async def create_job(self, tenant_id: str, config: MigrationJobConfig) -> MigrationJob:
         """Create a new migration job."""
@@ -297,7 +298,7 @@ class MigrationJobManager:
 class ProgressCalculator:
     """Calculates progress and ETA for migration jobs."""
 
-    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.constitutional_hash = constitutional_hash
         self._history: dict[str, list[tuple[datetime, int]]] = {}
 
@@ -354,7 +355,7 @@ class ProgressCalculator:
 class PDFReportGenerator:
     """Generates PDF reports for migration results."""
 
-    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.constitutional_hash = constitutional_hash
 
     async def generate_report(self, result: MigrationJobResult) -> PDFReport:
@@ -402,11 +403,15 @@ Generated at: {result.report_generated_at.isoformat()}
 class AsyncTaskQueue:
     """Async task queue for background job processing."""
 
-    def __init__(self, max_workers: int = 4, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(
+        self, max_workers: int = 4, constitutional_hash: str = CONSTITUTIONAL_HASH
+    ) -> None:
         self.max_workers = max_workers
         self.constitutional_hash = constitutional_hash
-        self._queue: asyncio.Queue = asyncio.Queue()
-        self._workers: list[asyncio.Task] = []
+        self._queue: asyncio.Queue[
+            tuple[str, Callable[..., Any], tuple[Any, ...], dict[str, Any]] | None
+        ] = asyncio.Queue()
+        self._workers: list[asyncio.Task[Any]] = []
         self._running = False
         self._results: JSONDict = {}
 
@@ -427,7 +432,13 @@ class AsyncTaskQueue:
         await asyncio.gather(*self._workers, return_exceptions=True)
         self._workers.clear()
 
-    async def enqueue(self, job_id: str, task_func: Callable, *args, **kwargs) -> None:
+    async def enqueue(
+        self,
+        job_id: str,
+        task_func: Callable[..., Any],
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         """Add a task to the queue."""
         await self._queue.put((job_id, task_func, args, kwargs))
 
@@ -453,7 +464,7 @@ class AsyncTaskQueue:
             except TimeoutError:
                 continue
 
-    def get_result(self, job_id: str) -> dict | None:
+    def get_result(self, job_id: str) -> dict[str, Any] | None:
         """Get the result of a completed task."""
         return self._results.get(job_id)  # type: ignore[no-any-return]
 
@@ -472,7 +483,7 @@ class MigrationJobAPI:
         task_queue: AsyncTaskQueue,
         pdf_generator: PDFReportGenerator,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         self.job_manager = job_manager
         self.task_queue = task_queue
         self.pdf_generator = pdf_generator

@@ -401,7 +401,7 @@ class PlanVerifier:
         self,
         capability_matcher: CapabilityMatcher,
         policy_evaluator: PolicyEvaluator | None = None,
-    ):
+    ) -> None:
         self._matcher = capability_matcher
         self._policy_evaluator = policy_evaluator
 

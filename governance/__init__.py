@@ -15,6 +15,9 @@ Modules:
 Constitutional Hash: 608508a9bd224290
 """
 
+from importlib import import_module
+from typing import Any
+
 from .capability_passport import (
     CapabilityDomain,
     CapabilityPassport,
@@ -31,12 +34,6 @@ from .danger_signal import (
     DangerSignal,
     DangerSignalAnalyzer,
 )
-from .democratic_governance import (
-    DemocraticConstitutionalGovernance,
-    ccai_governance,
-    deliberate_on_proposal,
-    get_ccai_governance,
-)
 from .governance_proposal import GovernanceProposal, ProposalStatus
 from .loop_orchestrator import GovernanceLoopOrchestrator, get_orchestrator, reset_orchestrator
 from .models import (
@@ -49,7 +46,24 @@ from .models import (
     Stakeholder,
     StakeholderGroup,
 )
-from .polis_engine import PolisDeliberationEngine
+
+_LAZY_EXPORT_MODULES = {
+    "DemocraticConstitutionalGovernance": ".democratic_governance",
+    "PolisDeliberationEngine": ".polis_engine",
+    "ccai_governance": ".democratic_governance",
+    "deliberate_on_proposal": ".democratic_governance",
+    "get_ccai_governance": ".democratic_governance",
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name not in _LAZY_EXPORT_MODULES:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+    module = import_module(_LAZY_EXPORT_MODULES[name], __name__)
+    value = getattr(module, name)
+    globals()[name] = value
+    return value
 
 __all__ = [
     "CapabilityDomain",

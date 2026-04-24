@@ -61,7 +61,7 @@ class BaseStateReducer(ABC):
     Constitutional Hash: 608508a9bd224290
     """
 
-    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
         self.constitutional_hash = constitutional_hash
 
     @abstractmethod
@@ -208,7 +208,7 @@ class MergeStateReducer(BaseStateReducer):
         deep_merge: bool = False,
         merge_lists: bool = False,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         super().__init__(constitutional_hash)
         self.deep_merge = deep_merge
         self.merge_lists = merge_lists
@@ -283,7 +283,7 @@ class OverwriteStateReducer(BaseStateReducer):
         preserve_keys: list[str] | None = None,
         remove_keys: list[str] | None = None,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         super().__init__(constitutional_hash)
         self.overwrite_keys = overwrite_keys or []
         self.preserve_keys = preserve_keys or []
@@ -352,7 +352,7 @@ class AccumulatorStateReducer(BaseStateReducer):
         accumulate_keys: list[str] | None = None,
         max_accumulate_size: int = 1000,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         super().__init__(constitutional_hash)
         self.accumulate_keys = accumulate_keys or []
         self.max_accumulate_size = max_accumulate_size
@@ -416,7 +416,7 @@ class CustomStateReducer(BaseStateReducer):
         self,
         reduce_fn: Callable[[JSONDict, JSONDict, str], JSONDict],
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         """
         Args:
             reduce_fn: Custom function (current_data, output, node_id) -> new_data

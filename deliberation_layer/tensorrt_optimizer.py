@@ -107,7 +107,7 @@ class TensorRTOptimizer:
         max_seq_length: int = 128,
         use_fp16: bool = True,
         cache_dir: Path | None = None,
-    ):
+    ) -> None:
         """
         Initialize TensorRT optimizer.
 

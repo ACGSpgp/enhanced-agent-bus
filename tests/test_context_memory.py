@@ -728,6 +728,82 @@ class TestConstitutionalContextCache:
         assert "p99_latency_ms" in metrics
         assert metrics["constitutional_hash"] == CONSTITUTIONAL_HASH
 
+    def test_latency_window_keeps_incremental_metrics(self, cache_config, monkeypatch):
+        """Test latency metrics stay correct without sorting the full window per write."""
+        cache = ConstitutionalContextCache(config=cache_config)
+        cache._latency_window_size = 3
+
+        samples = iter([0.005, 0.001, 0.003, 0.004])
+        monkeypatch.setattr(time, "perf_counter", lambda: next(samples))
+
+        for _ in range(4):
+            cache._record_latency(0.0)
+
+        assert list(cache._latencies) == pytest.approx([1.0, 3.0, 4.0])
+        assert cache._sorted_latencies == pytest.approx([1.0, 3.0, 4.0])
+        assert cache._stats.p99_latency_ms == pytest.approx(4.0)
+        assert cache._stats.average_latency_ms == pytest.approx(8.0 / 3.0)
+
+    def test_latency_window_handles_duplicate_samples(self, cache_config, monkeypatch):
+        """Duplicate latency samples must evict exactly one occurrence from the sorted mirror."""
+        cache = ConstitutionalContextCache(config=cache_config)
+        cache._latency_window_size = 3
+
+        samples = iter([0.002, 0.002, 0.002, 0.005])
+        monkeypatch.setattr(time, "perf_counter", lambda: next(samples))
+
+        for _ in range(4):
+            cache._record_latency(0.0)
+
+        assert list(cache._latencies) == pytest.approx([2.0, 2.0, 5.0])
+        assert cache._sorted_latencies == pytest.approx([2.0, 2.0, 5.0])
+        assert cache._stats.p99_latency_ms == pytest.approx(5.0)
+        assert cache._stats.average_latency_ms == pytest.approx(9.0 / 3.0)
+
+    def test_p99_uses_nearest_rank(self, cache_config, monkeypatch):
+        """P99 must be the nearest-rank 99th percentile, not the maximum.
+
+        For the samples 1..100 ms, nearest-rank P99 is 99 ms (index 98), not 100 ms.
+        The prior `int(n * 0.99)` formula incorrectly picked the top value.
+        """
+        cache = ConstitutionalContextCache(config=cache_config)
+        cache._latency_window_size = 100
+
+        samples = iter([i / 1000.0 for i in range(1, 101)])
+        monkeypatch.setattr(time, "perf_counter", lambda: next(samples))
+
+        for _ in range(100):
+            cache._record_latency(0.0)
+
+        assert cache._stats.p99_latency_ms == pytest.approx(99.0)
+        assert cache._stats.average_latency_ms == pytest.approx(50.5)
+
+    def test_latency_mirror_self_repairs_on_desync(self, cache_config, monkeypatch, caplog):
+        """If the sorted mirror ever drifts out of sync, eviction must repair both mirror and sum."""
+        cache = ConstitutionalContextCache(config=cache_config)
+        cache._latency_window_size = 3
+
+        samples = iter([0.001, 0.002, 0.003, 0.004])
+        monkeypatch.setattr(time, "perf_counter", lambda: next(samples))
+
+        for _ in range(3):
+            cache._record_latency(0.0)
+
+        # Corrupt the mirror: remove a value that `_latencies` still holds so the
+        # next eviction's bisect lookup will miss.
+        cache._sorted_latencies.remove(1.0)
+        assert cache._sorted_latencies == pytest.approx([2.0, 3.0])
+
+        cache._record_latency(0.0)
+
+        # After the 4th sample the window evicts the oldest (1.0). The bisect lookup
+        # cannot find it, so the repair path must rebuild mirror + sum from _latencies.
+        assert list(cache._latencies) == pytest.approx([2.0, 3.0, 4.0])
+        assert cache._sorted_latencies == pytest.approx([2.0, 3.0, 4.0])
+        assert cache._latency_total == pytest.approx(9.0)
+        assert cache._stats.p99_latency_ms == pytest.approx(4.0)
+        assert cache._stats.average_latency_ms == pytest.approx(3.0)
+
 
 # =============================================================================
 # Integration Tests (5 tests)

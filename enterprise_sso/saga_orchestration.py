@@ -225,7 +225,7 @@ class SagaExecutionResult:
 class SagaStore:
     """Redis-based store for saga state with persistence across restarts."""
 
-    def __init__(self, redis_url: str | None = None):
+    def __init__(self, redis_url: str | None = None) -> None:
         self._redis_url = redis_url or os.getenv("REDIS_URL", "redis://localhost:6379/0")
         self._redis: redis.asyncio.Redis | None = None
         self._key_prefix = "acgs:saga:"
@@ -410,7 +410,7 @@ class SagaStore:
 class SagaEventPublisher:
     """Publisher for saga events (replace with Kafka in production)."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._handlers: list[Callable[[SagaEvent], Coroutine[object, object, None]]] = []
         self._event_log: list[SagaEvent] = []
 
@@ -452,7 +452,7 @@ class SagaOrchestrator:
         store: SagaStore | None = None,
         event_publisher: SagaEventPublisher | None = None,
         constitutional_hash: str = CONSTITUTIONAL_HASH,
-    ):
+    ) -> None:
         self.store = store or SagaStore()
         self.event_publisher = event_publisher or SagaEventPublisher()
         self.constitutional_hash = constitutional_hash
@@ -920,7 +920,7 @@ class SagaOrchestrator:
 class MigrationSagaBuilder:
     """Builder for creating migration-specific sagas."""
 
-    def __init__(self, orchestrator: SagaOrchestrator):
+    def __init__(self, orchestrator: SagaOrchestrator) -> None:
         self.orchestrator = orchestrator
 
     def _create_mock_handlers(
@@ -1081,7 +1081,7 @@ class MigrationSagaBuilder:
 class SagaRecoveryService:
     """Service for recovering failed or interrupted sagas."""
 
-    def __init__(self, orchestrator: SagaOrchestrator):
+    def __init__(self, orchestrator: SagaOrchestrator) -> None:
         self.orchestrator = orchestrator
         self._running = False
         self._recovery_task: asyncio.Task | None = None
@@ -1131,7 +1131,7 @@ class SagaRecoveryService:
 class SagaMetrics:
     """Metrics collection for saga execution."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.total_sagas = 0
         self.successful_sagas = 0
         self.failed_sagas = 0

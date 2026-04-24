@@ -71,7 +71,7 @@ class VoteEventConsumer:
         tenant_id: str = "default",
         bootstrap_servers: str | None = None,
         voting_service: object | None = None,
-    ):
+    ) -> None:
         """
         Initialize vote event consumer.
 
