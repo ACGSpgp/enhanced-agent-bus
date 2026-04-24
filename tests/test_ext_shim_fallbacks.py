@@ -9,6 +9,18 @@ from contextlib import contextmanager
 from types import ModuleType
 
 
+def test_top_level_package_imports_with_metrics_fallback() -> None:
+    module = importlib.import_module("enhanced_agent_bus")
+
+    assert module.__version__ == "3.0.2"
+
+
+def test_standalone_database_session_fallback_provides_orm_base() -> None:
+    session_module = importlib.import_module("enhanced_agent_bus._compat.database.session")
+
+    assert session_module.Base is not None
+
+
 @contextmanager
 def _reimport_with_blocked_dependency(
     module_name: str,

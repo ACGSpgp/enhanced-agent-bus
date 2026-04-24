@@ -50,10 +50,5 @@
         ]
       }
     ]
-  },
-  "enabledPlugins": {
-    "claude-code-setup@claude-plugins-official": true,
-    "github@openai-curated": true,
-    "coderabbit@openai-curated": true
   }
 }

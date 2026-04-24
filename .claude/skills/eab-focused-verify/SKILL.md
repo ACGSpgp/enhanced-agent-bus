@@ -1,12 +1,21 @@
 ---
 name: eab-focused-verify
-description: Run the focused enhanced-agent-bus verification gate for touched Python files and package cohorts.
+description: Run focused enhanced-agent-bus verification after package-local Python, config, or agent automation edits.
 disable-model-invocation: true
 ---
 
 # EAB Focused Verify
 
-Use this when a change touched `packages/enhanced_agent_bus` and the goal is to prove the narrow claim without running the full package regression.
+Use this only when a change touched `packages/enhanced_agent_bus` and the goal is to prove a narrow claim without running the full package regression.
+
+Inputs:
+- Changed file list, or enough task context to derive one from `git diff --name-only`.
+- Optional module/test targets when the caller already knows the impacted area.
+
+Outputs:
+- Exact verification commands run.
+- Pass/fail result for each command.
+- Remaining risks, including skipped full-suite gates.
 
 ## Workflow
 

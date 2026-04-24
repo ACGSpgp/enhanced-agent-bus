@@ -1,12 +1,22 @@
 ---
 name: eab-stop-gate-review
-description: Review the immediately previous enhanced-agent-bus code-changing turn for governance, security, namespace, and verification risks.
+description: Review only the immediately previous enhanced-agent-bus code-changing turn for ship-blocking risks.
 disable-model-invocation: true
 ---
 
 # EAB Stop-Gate Review
 
 Use only for reviewing the immediately previous code-changing turn. If the previous turn did not edit code or automation files, return `ALLOW:` immediately and do no substantive review.
+
+Inputs:
+- The immediately previous assistant/agent turn.
+- The exact changed files from that turn.
+- Verification output from that same turn, if present.
+
+Outputs:
+- `ALLOW:` or `BLOCK:` first.
+- Findings with file and line references when blocking.
+- Verification gaps only when they affect ship confidence.
 
 ## Review Priorities
 
