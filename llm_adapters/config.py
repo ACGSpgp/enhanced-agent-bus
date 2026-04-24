@@ -307,10 +307,15 @@ class OpenAIAdapterConfig(BaseAdapterConfig):
             OpenAIAdapterConfig instance
         """
         api_key = os.getenv("OPENAI_API_KEY")
+        _bt_key = os.getenv("BRAINTRUST_API_KEY", "")
+        _use_gw = bool(_bt_key) and os.getenv("BRAINTRUST_GATEWAY", "").lower() in ("1", "true")
         payload: dict[str, Any] = {
             "model": model,
-            "api_key": SecretStr(api_key) if api_key else None,
-            "api_base": os.getenv("OPENAI_API_BASE"),
+            "api_key": SecretStr(_bt_key if _use_gw else api_key)
+            if (_bt_key if _use_gw else api_key)
+            else None,
+            "api_base": os.getenv("OPENAI_API_BASE")
+            or ("https://gateway.braintrust.dev/v1" if _use_gw else None),
             "organization": os.getenv("OPENAI_ORGANIZATION"),
             "rate_limit": RateLimitConfig(
                 requests_per_minute=int(os.getenv("OPENAI_RPM", "60")),
@@ -357,10 +362,15 @@ class AnthropicAdapterConfig(BaseAdapterConfig):
             AnthropicAdapterConfig instance
         """
         api_key = os.getenv("ANTHROPIC_API_KEY")
+        _bt_key = os.getenv("BRAINTRUST_API_KEY", "")
+        _use_gw = bool(_bt_key) and os.getenv("BRAINTRUST_GATEWAY", "").lower() in ("1", "true")
         payload: dict[str, Any] = {
             "model": model,
-            "api_key": SecretStr(api_key) if api_key else None,
-            "api_base": os.getenv("ANTHROPIC_API_BASE"),
+            "api_key": SecretStr(_bt_key if _use_gw else api_key)
+            if (_bt_key if _use_gw else api_key)
+            else None,
+            "api_base": os.getenv("ANTHROPIC_API_BASE")
+            or ("https://gateway.braintrust.dev" if _use_gw else None),
             "api_version": os.getenv("ANTHROPIC_API_VERSION", "2023-06-01"),
             "rate_limit": RateLimitConfig(
                 requests_per_minute=int(os.getenv("ANTHROPIC_RPM", "50")),
