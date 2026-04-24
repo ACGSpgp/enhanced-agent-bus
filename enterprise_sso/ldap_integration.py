@@ -16,7 +16,7 @@ from datetime import UTC, datetime, timedelta, timezone
 from enum import Enum
 from queue import Empty, Queue
 from types import TracebackType
-from typing import Any
+from typing import Any, Iterator
 
 from enhanced_agent_bus.observability.structured_logging import get_logger
 
@@ -446,7 +446,7 @@ class LDAPConnectionPool:
         return conn
 
     @contextmanager
-    def acquire(self) -> None:
+    def acquire(self) -> Iterator["LDAPConnection"]:
         """Acquire a connection from the pool."""
         conn: LDAPConnection | None = None
 

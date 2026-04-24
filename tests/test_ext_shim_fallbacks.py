@@ -96,6 +96,33 @@ def test_ext_performance_fallback_exports() -> None:
         assert module._EXT_ALL == module.__all__
 
 
+def test_standalone_database_session_base_none_when_sqlalchemy_absent() -> None:
+    """Base=None when both shared-session and sqlalchemy.orm are unavailable."""
+    module_name = "enhanced_agent_bus._compat.database.session"
+    blocked = ["src.core.shared.database.session", "sqlalchemy.orm", "sqlalchemy"]
+
+    originals = {k: sys.modules.get(k) for k in blocked}
+    original_module = sys.modules.pop(module_name, None)
+    for k in blocked:
+        sys.modules[k] = None  # type: ignore[assignment]
+
+    try:
+        module = importlib.import_module(module_name)
+        reloaded = importlib.reload(module)
+        assert reloaded.Base is None
+        assert reloaded.engine is None
+        assert reloaded.SessionLocal is None
+    finally:
+        sys.modules.pop(module_name, None)
+        if original_module is not None:
+            sys.modules[module_name] = original_module
+        for k, v in originals.items():
+            if v is not None:
+                sys.modules[k] = v
+            else:
+                sys.modules.pop(k, None)
+
+
 def test_ext_circuit_breaker_fallback_exports() -> None:
     with _reimport_with_blocked_dependency(
         "enhanced_agent_bus._ext_circuit_breaker",
