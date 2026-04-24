@@ -72,28 +72,12 @@ from .rate_limiting import (
     limiter,
     require_rate_limiting_dependencies,
 )
-from .routes.agent_health import router as agent_health_router
-from .routes.badge import router as badge_router
-from .routes.batch import router as batch_router
 from .routes.governance import (
     InMemoryPQCConfigBackend,
     MACIRecordStore,
     RedisMACIRecordStore,
     RedisMACIRoleRegistry,
 )
-from .routes.governance import (
-    router as governance_router,
-)
-from .routes.health import router as health_router
-from .routes.messages import router as messages_router
-from .routes.policies import router as policies_router
-from .routes.public_v1 import router as public_v1_router
-from .routes.signup import router as signup_router
-from .routes.stats import router as stats_router
-from .routes.usage import router as usage_router
-from .routes.widget_js import router as widget_js_router
-from .routes.workflows import router as workflows_router
-from .routes.z3 import router as z3_router
 
 _API_APP_OPERATION_ERRORS = (
     RuntimeError,
@@ -158,21 +142,21 @@ workflow_executor: DurableWorkflowExecutor | None = None
 workflow_repository: Any = None
 
 
-_CORE_ROUTERS: tuple[APIRouter, ...] = (
-    health_router,
-    agent_health_router,
-    messages_router,
-    batch_router,
-    policies_router,
-    governance_router,
-    public_v1_router,
-    badge_router,
-    signup_router,
-    stats_router,
-    usage_router,
-    widget_js_router,
-    workflows_router,
-    z3_router,
+_CORE_ROUTE_MODULES: tuple[str, ...] = (
+    ".routes.health",
+    ".routes.agent_health",
+    ".routes.messages",
+    ".routes.batch",
+    ".routes.policies",
+    ".routes.governance",
+    ".routes.public_v1",
+    ".routes.badge",
+    ".routes.signup",
+    ".routes.stats",
+    ".routes.usage",
+    ".routes.widget_js",
+    ".routes.workflows",
+    ".routes.z3",
 )
 
 
@@ -505,9 +489,12 @@ def _configure_application_state(application: FastAPI) -> None:
 
 
 def _register_core_routers(application: FastAPI) -> None:
-    """Register the stable built-in router set."""
-    for router in _CORE_ROUTERS:
-        application.include_router(router)
+    """Register the stable built-in router set (lazy imports at call time)."""
+    for module_path in _CORE_ROUTE_MODULES:
+        module = import_module(module_path, package=__package__)
+        router = getattr(module, "router", None)
+        if isinstance(router, APIRouter):
+            application.include_router(router)
 
 
 def _register_feature_routers(application: FastAPI) -> None:
@@ -639,7 +626,6 @@ if __name__ == "__main__":
 
 __all__ = [
     "agent_bus",
-    "agent_health_router",
     "app",
     "batch_processor",
     "create_app",
