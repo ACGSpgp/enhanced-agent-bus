@@ -8,6 +8,6 @@ bridge). No behavior change.
 
 from __future__ import annotations
 
-from enhanced_agent_bus.message_processor import MessageProcessor
+from . import MessageProcessor
 
 __all__ = ["MessageProcessor"]

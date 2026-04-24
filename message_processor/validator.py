@@ -9,8 +9,7 @@ shared :class:`ValidationResult` type. No behavior change.
 
 from __future__ import annotations
 
-from enhanced_agent_bus.validators import ValidationResult
-
-from enhanced_agent_bus.message_processor import MessageProcessor
+from ..validators import ValidationResult
+from . import MessageProcessor
 
 __all__ = ["MessageProcessor", "ValidationResult"]

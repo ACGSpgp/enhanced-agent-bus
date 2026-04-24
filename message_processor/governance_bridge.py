@@ -8,8 +8,7 @@ the ``_governance_*`` setup attributes on MessageProcessor) alongside the
 
 from __future__ import annotations
 
-from enhanced_agent_bus.governance_coordinator import GovernanceCoordinator
-
-from enhanced_agent_bus.message_processor import MessageProcessor
+from ..governance_coordinator import GovernanceCoordinator
+from . import MessageProcessor
 
 __all__ = ["GovernanceCoordinator", "MessageProcessor"]
