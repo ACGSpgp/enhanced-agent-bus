@@ -74,12 +74,6 @@ from .rate_limiting import (
     limiter,
     require_rate_limiting_dependencies,
 )
-from .routes.governance import (
-    InMemoryPQCConfigBackend,
-    MACIRecordStore,
-    RedisMACIRecordStore,
-    RedisMACIRoleRegistry,
-)
 
 _API_APP_OPERATION_ERRORS = (
     RuntimeError,
@@ -386,6 +380,8 @@ def _bind_runtime_state(app: FastAPI, *, bus: MessageProcessor | dict[str, Any])
 
 def _configure_in_memory_governance_state(application: FastAPI) -> None:
     """Wire development/test-only in-memory governance backends."""
+    from .routes.governance import InMemoryPQCConfigBackend, MACIRecordStore
+
     application.state.governance_redis_client = None
     application.state.maci_record_store = MACIRecordStore()
     application.state.maci_role_registry = MACIRoleRegistry()
@@ -404,6 +400,8 @@ def _configure_shared_governance_state(
     redis_client: Any,
 ) -> None:
     """Wire shared Redis-backed governance backends."""
+    from .routes.governance import RedisMACIRecordStore, RedisMACIRoleRegistry
+
     registry = RedisMACIRoleRegistry(redis_client=redis_client)
     application.state.governance_redis_client = redis_client
     application.state.maci_record_store = RedisMACIRecordStore(redis_client=redis_client)
@@ -419,6 +417,8 @@ def _configure_shared_governance_state(
 
 def _governance_state_is_shared(application: FastAPI) -> bool:
     """Return whether the app already uses shared governance backends."""
+    from .routes.governance import RedisMACIRecordStore, RedisMACIRoleRegistry
+
     app_state = application.state
     return isinstance(getattr(app_state, "maci_record_store", None), RedisMACIRecordStore) and (
         isinstance(getattr(app_state, "maci_role_registry", None), RedisMACIRoleRegistry)
