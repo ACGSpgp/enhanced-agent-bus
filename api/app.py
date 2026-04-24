@@ -608,15 +608,23 @@ def create_app() -> FastAPI:
     return _configure_application(application)
 
 
-# Create the default app instance
-app = create_app()
+_module_app: FastAPI | None = None
+
+
+def __getattr__(name: str) -> Any:
+    global _module_app
+    if name == "app":
+        if _module_app is None:
+            _module_app = create_app()
+        return _module_app
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        app,
+        create_app(),
         host="127.0.0.1",  # nosec B104 - Intentional for container deployment
         port=DEFAULT_API_PORT,
         reload=False,
