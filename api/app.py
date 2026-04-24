@@ -47,7 +47,6 @@ from ..batch_processor import BatchMessageProcessor
 from ..maci_enforcement import MACIEnforcer, MACIRoleRegistry
 from ..message_processor import MessageProcessor
 from ..persistence.executor import DurableWorkflowExecutor, WorkflowContext
-from ..persistence.postgres_repository import PostgresWorkflowRepository
 from ..persistence.repository import InMemoryWorkflowRepository
 from ..pqc_enforcement_config import EnforcementModeConfigService
 from .config import (
@@ -156,7 +155,7 @@ agent_bus: MessageProcessor | dict[str, Any] | None = None
 batch_processor: BatchMessageProcessor | None = None
 message_circuit_breaker: pybreaker.CircuitBreaker | None = None
 workflow_executor: DurableWorkflowExecutor | None = None
-workflow_repository: PostgresWorkflowRepository | InMemoryWorkflowRepository | None = None
+workflow_repository: Any = None
 
 
 _CORE_ROUTERS: tuple[APIRouter, ...] = (
@@ -229,21 +228,18 @@ def _initialize_agent_bus_state(
 
 async def _initialize_workflow_components(
     app: FastAPI,
-) -> tuple[
-    DurableWorkflowExecutor | None,
-    PostgresWorkflowRepository | InMemoryWorkflowRepository | None,
-]:
+) -> tuple[DurableWorkflowExecutor | None, Any]:
     """Initialize durable workflow repository and executor."""
     logger.info("Initializing Durable Workflow Executor...")
     try:
+        from ..persistence.postgres_repository import PostgresWorkflowRepository
+
         db_url = os.environ.get(
             "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres"
         )
         normalized_dsn = _normalize_workflow_dsn(db_url)
 
-        repository: PostgresWorkflowRepository | InMemoryWorkflowRepository = (
-            PostgresWorkflowRepository(dsn=normalized_dsn)
-        )
+        repository: Any = PostgresWorkflowRepository(dsn=normalized_dsn)
         await repository.initialize()
         executor = _register_builtin_workflows(DurableWorkflowExecutor(repository=repository))
         app.state.workflow_executor = executor
@@ -352,7 +348,7 @@ async def _shutdown_session_manager_if_available() -> None:
 
 
 async def _close_workflow_repository_if_available(
-    repository: PostgresWorkflowRepository | InMemoryWorkflowRepository | None,
+    repository: Any,
 ) -> None:
     """Close workflow repository during shutdown when initialized."""
     try:
@@ -462,7 +458,7 @@ def _ensure_governance_state(
 
 def _attach_pqc_postgres_fallback(
     application: FastAPI,
-    repository: PostgresWorkflowRepository | InMemoryWorkflowRepository | None,
+    repository: Any,
 ) -> None:
     """Attach PostgreSQL fallback storage to the shared PQC service when available."""
     service = getattr(application.state, "pqc_enforcement_service", None)
