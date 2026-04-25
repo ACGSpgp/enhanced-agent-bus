@@ -181,9 +181,73 @@ def setup_correlation_id_middleware(app: FastAPI) -> None:
     app.middleware("http")(correlation_mw)
 
 
+def setup_braintrust_request_middleware(app: FastAPI) -> None:
+    """Trace request-level metadata in Braintrust when SDK auth is configured."""
+    if not os.environ.get("BRAINTRUST_API_KEY"):
+        return
+    if os.environ.get("BRAINTRUST_TRACE_REQUESTS", "").lower() not in {"1", "true", "yes", "on"}:
+        return
+
+    try:
+        braintrust = importlib.import_module("braintrust")
+    except ImportError:
+        return
+
+    @app.middleware("http")
+    async def braintrust_request_middleware(
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
+        route = request.scope.get("route")
+        route_path = getattr(route, "path", request.url.path)
+        correlation_id = request.headers.get("X-Correlation-ID")
+
+        with braintrust.start_span(
+            name="http.request",
+            type="task",
+            input={
+                "method": request.method,
+                "path": request.url.path,
+                "route": route_path,
+            },
+            metadata={
+                "service": "enhanced-agent-bus",
+                "method": request.method,
+                "path": request.url.path,
+                "route": route_path,
+                "correlation_id": correlation_id,
+            },
+            tags=["enhanced-agent-bus", "http-request"],
+        ) as span:
+            try:
+                response = await call_next(request)
+            except Exception as exc:
+                span.log(
+                    error=type(exc).__name__,
+                    metadata={
+                        "status_class": "5xx",
+                        "exception_type": type(exc).__name__,
+                    },
+                    tags=["http-5xx"],
+                )
+                raise
+
+            status_class = f"{response.status_code // 100}xx"
+            span.log(
+                output={"status_code": response.status_code},
+                metadata={
+                    "status_code": response.status_code,
+                    "status_class": status_class,
+                },
+                tags=[f"http-{status_class}"],
+            )
+            return response
+
+
 def setup_all_middleware(app: FastAPI) -> None:
     """Configure all middleware for the application."""
     setup_correlation_id_middleware(app)
+    setup_braintrust_request_middleware(app)
     setup_cors_middleware(app)
     setup_tenant_context_middleware(app)
     setup_security_headers_middleware(app)
@@ -193,6 +257,7 @@ def setup_all_middleware(app: FastAPI) -> None:
 __all__ = [
     "API_VERSIONING_AVAILABLE",
     "SECURITY_HEADERS_AVAILABLE",
+    "setup_braintrust_request_middleware",
     "correlation_id_middleware",
     "logger",
     "setup_all_middleware",

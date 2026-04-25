@@ -452,6 +452,57 @@ class TestSetupCorrelationIdMiddleware:
 
 
 # ---------------------------------------------------------------------------
+# setup_braintrust_request_middleware
+# ---------------------------------------------------------------------------
+
+
+class TestSetupBraintrustRequestMiddleware:
+    def test_does_nothing_without_api_key(self) -> None:
+        app = _make_app()
+        with patch.dict("os.environ", {}, clear=True):
+            mw_mod.setup_braintrust_request_middleware(app)
+
+        app.middleware.assert_not_called()
+
+    def test_does_nothing_when_request_tracing_disabled(self) -> None:
+        app = _make_app()
+        with patch.dict("os.environ", {"BRAINTRUST_API_KEY": "test-key"}, clear=True):
+            mw_mod.setup_braintrust_request_middleware(app)
+
+        app.middleware.assert_not_called()
+
+    def test_does_nothing_when_braintrust_unavailable(self) -> None:
+        app = _make_app()
+        with (
+            patch.dict(
+                "os.environ",
+                {"BRAINTRUST_API_KEY": "test-key", "BRAINTRUST_TRACE_REQUESTS": "1"},
+            ),
+            patch.object(mw_mod.importlib, "import_module", side_effect=ImportError),
+        ):
+            mw_mod.setup_braintrust_request_middleware(app)
+
+        app.middleware.assert_not_called()
+
+    def test_registers_middleware_when_configured(self) -> None:
+        app = _make_app()
+        mock_decorator = MagicMock()
+        app.middleware.return_value = mock_decorator
+
+        with (
+            patch.dict(
+                "os.environ",
+                {"BRAINTRUST_API_KEY": "test-key", "BRAINTRUST_TRACE_REQUESTS": "1"},
+            ),
+            patch.object(mw_mod.importlib, "import_module", return_value=MagicMock()),
+        ):
+            mw_mod.setup_braintrust_request_middleware(app)
+
+        app.middleware.assert_called_once_with("http")
+        assert mock_decorator.call_count == 1
+
+
+# ---------------------------------------------------------------------------
 # setup_all_middleware
 # ---------------------------------------------------------------------------
 
@@ -462,6 +513,7 @@ class TestSetupAllMiddleware:
 
         with (
             patch.object(mw_mod, "setup_correlation_id_middleware") as mock_corr,
+            patch.object(mw_mod, "setup_braintrust_request_middleware") as mock_bt,
             patch.object(mw_mod, "setup_cors_middleware") as mock_cors,
             patch.object(mw_mod, "setup_tenant_context_middleware") as mock_tenant,
             patch.object(mw_mod, "setup_security_headers_middleware") as mock_sec,
@@ -470,13 +522,14 @@ class TestSetupAllMiddleware:
             mw_mod.setup_all_middleware(app)
 
         mock_corr.assert_called_once_with(app)
+        mock_bt.assert_called_once_with(app)
         mock_cors.assert_called_once_with(app)
         mock_tenant.assert_called_once_with(app)
         mock_sec.assert_called_once_with(app)
         mock_ver.assert_called_once_with(app)
 
     def test_order_of_calls(self) -> None:
-        """Correlation ID → CORS → Tenant → Security Headers → API Versioning."""
+        """Correlation ID → Braintrust → CORS → Tenant → Security Headers → API Versioning."""
         app = _make_app()
         call_order = []
 
@@ -485,6 +538,11 @@ class TestSetupAllMiddleware:
                 mw_mod,
                 "setup_correlation_id_middleware",
                 side_effect=lambda a: call_order.append("correlation"),
+            ),
+            patch.object(
+                mw_mod,
+                "setup_braintrust_request_middleware",
+                side_effect=lambda a: call_order.append("braintrust"),
             ),
             patch.object(
                 mw_mod,
@@ -509,7 +567,14 @@ class TestSetupAllMiddleware:
         ):
             mw_mod.setup_all_middleware(app)
 
-        assert call_order == ["correlation", "cors", "tenant", "security", "versioning"]
+        assert call_order == [
+            "correlation",
+            "braintrust",
+            "cors",
+            "tenant",
+            "security",
+            "versioning",
+        ]
 
 
 # ---------------------------------------------------------------------------

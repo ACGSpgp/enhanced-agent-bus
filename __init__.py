@@ -105,11 +105,17 @@ def __getattr__(name):
         }
         _S["\x00ext"] = {}
 
-    if name in ("CIRCUIT_BREAKER_ENABLED", "DELIBERATION_AVAILABLE",
-                "METERING_AVAILABLE", "METRICS_ENABLED", "USE_RUST"):
+    if name in (
+        "CIRCUIT_BREAKER_ENABLED",
+        "DELIBERATION_AVAILABLE",
+        "METERING_AVAILABLE",
+        "METRICS_ENABLED",
+        "USE_RUST",
+    ):
         flags = _S.get("\x00flags")
         if flags is None:
             import importlib
+
             m = importlib.import_module("enhanced_agent_bus.dependency_bridge")
             flags = _S["\x00flags"] = m.get_feature_flags()
         val = flags.get(name, False)
@@ -120,15 +126,22 @@ def __getattr__(name):
         if name in lazy:
             mod_path, attr = lazy[name]
             _cache = [None]
+
             def _resolve():
                 if _cache[0] is None:
                     import importlib
+
                     m = importlib.import_module(mod_path)
                     _cache[0] = getattr(m, attr if attr is not None else name)
                 return _cache[0]
+
             class _P:
-                def __call__(self, *a, **kw): return _resolve()(*a, **kw)
-                def __getattr__(self, n): return getattr(_resolve(), n)
+                def __call__(self, *a, **kw):
+                    return _resolve()(*a, **kw)
+
+                def __getattr__(self, n):
+                    return getattr(_resolve(), n)
+
             p = _P()
             _S[name] = p
             return p
@@ -136,12 +149,14 @@ def __getattr__(name):
     if name in lazy:
         mod_path, attr = lazy[name]
         import importlib
+
         mod = importlib.import_module(mod_path)
         val = getattr(mod, attr if attr is not None else name)
         _S[name] = val
         return val
 
     import importlib
+
     ext = _S["\x00ext"]
     for mp in (
         "enhanced_agent_bus._ext_cache_warming",

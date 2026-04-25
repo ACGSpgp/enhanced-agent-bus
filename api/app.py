@@ -20,6 +20,23 @@ import pybreaker
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import ORJSONResponse
 
+
+def _configure_braintrust() -> None:
+    api_key = os.environ.get("BRAINTRUST_API_KEY")
+    if not api_key:
+        return
+
+    try:
+        import braintrust
+    except ImportError:
+        return
+
+    braintrust.auto_instrument()
+    braintrust.init_logger(api_key=api_key, project="agent_bus")
+
+
+_configure_braintrust()
+
 from enhanced_agent_bus.exceptions import (
     AgentBusError,
     AgentError,
