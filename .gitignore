@@ -28,3 +28,10 @@ mlruns/
 .omc/specs/
 .omc/state/
 rust/.omc/
+
+# Agent / orchestrator state (autogen, do not commit)
+.agents/skills/braintrust/
+.bt/config.json
+.bt/skills/
+.worktrees/
+deliberation_layer/optimized_models/
