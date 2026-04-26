@@ -73,7 +73,7 @@ def available(name: str) -> bool:
     module_path = PLUGINS[name]
     try:
         return find_spec(module_path) is not None
-    except (ModuleNotFoundError, ValueError):
+    except (ModuleNotFoundError, TypeError, ValueError):
         return False
 
 
