@@ -32,7 +32,13 @@ try:
     stats = _stats_module
 
     SCIPY_AVAILABLE = True
-except ImportError:
+except (ImportError, TypeError, AttributeError):
+    # ImportError: scipy/numpy not installed.
+    # TypeError/AttributeError: import-time crashes from broken upstream wheels
+    # (e.g. scipy + array_api_compat _issubclass_fast regression that raises
+    # `TypeError: issubclass() arg 2 must be a class, ...` while loading
+    # scipy.stats._new_distributions). Treat any import-time failure as
+    # "scipy unavailable" rather than crashing module load.
     SCIPY_AVAILABLE = False
 
 from .metrics_collector import GovernanceMetricsCollector, GovernanceMetricsSnapshot
