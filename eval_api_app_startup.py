@@ -25,8 +25,7 @@ _BOOTSTRAP = (
 )
 
 _CODE = (
-    _BOOTSTRAP
-    + "import time; t = time.perf_counter(); "
+    _BOOTSTRAP + "import time; t = time.perf_counter(); "
     "import enhanced_agent_bus.api.app; "
     "print((time.perf_counter()-t)*1000)"
 )

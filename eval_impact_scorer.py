@@ -10,7 +10,14 @@ def get_p99():
     env = os.environ.copy()
     env["PYTHONPATH"] = pkg_path + ":" + env.get("PYTHONPATH", "")
 
-    cmd = [sys.executable, "-m", "enhanced_agent_bus.profiling.benchmark_gpu_decision", "--samples", "50", "--no-save"]
+    cmd = [
+        sys.executable,
+        "-m",
+        "enhanced_agent_bus.profiling.benchmark_gpu_decision",
+        "--samples",
+        "50",
+        "--no-save",
+    ]
     try:
         result = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=60)
         # Search for Latency P99 in the output (it might be in a JSON message field)
@@ -20,7 +27,9 @@ def get_p99():
             return float(matches[-1])
 
         # Fallback: check for sequential RPS if latency not found
-        rps_matches = re.findall(r"Sequential: [\d.]+s, ([\d.]+) RPS", result.stdout + result.stderr)
+        rps_matches = re.findall(
+            r"Sequential: [\d.]+s, ([\d.]+) RPS", result.stdout + result.stderr
+        )
         if rps_matches:
             rps = float(rps_matches[-1])
             if rps > 0:
@@ -30,6 +39,7 @@ def get_p99():
         print(f"Error running benchmark: {e}", file=sys.stderr)
 
     return 9999.0
+
 
 if __name__ == "__main__":
     print(f"latency_p99_ms: {get_p99():.3f}")

@@ -147,6 +147,7 @@ def _build_ort_session() -> "tuple[Any, Any] | None":
         return None
 
     import os as _os2
+
     cache_path = _ORT_CACHE_PATH
     _os2.makedirs(_os2.path.dirname(cache_path), exist_ok=True)
 
@@ -163,8 +164,11 @@ def _build_ort_session() -> "tuple[Any, Any] | None":
                 model = AutoModel.from_pretrained("distilbert-base-uncased")
                 model.eval()
                 dummy = tokenizer(
-                    "test", return_tensors="pt", padding="max_length",
-                    truncation=True, max_length=_ORT_MAX_SEQ
+                    "test",
+                    return_tensors="pt",
+                    padding="max_length",
+                    truncation=True,
+                    max_length=_ORT_MAX_SEQ,
                 )
                 cast(Any, _torch).onnx.export(
                     model,
@@ -185,6 +189,7 @@ def _build_ort_session() -> "tuple[Any, Any] | None":
             # Quantize to int8
             logger.info("ImpactScorer: quantizing to int8...")
             from onnxruntime.quantization import QuantType, quantize_dynamic
+
             quantize_dynamic(fp32_path, cache_path, weight_type=QuantType.QInt8)
             logger.info("ImpactScorer: int8 quantization done → %s", cache_path)
 
@@ -199,7 +204,9 @@ def _build_ort_session() -> "tuple[Any, Any] | None":
         return session, tokenizer
 
     except Exception as exc:
-        logger.warning("ImpactScorer: int8 ONNX setup failed (%s), using keyword fallback", type(exc).__name__)
+        logger.warning(
+            "ImpactScorer: int8 ONNX setup failed (%s), using keyword fallback", type(exc).__name__
+        )
         return None
 
 
@@ -214,6 +221,7 @@ def get_impact_scorer(config: ScoringConfig | None = None, **kwargs: Any) -> "Im
             from enhanced_agent_bus.observability.structured_logging import (
                 configure_structured_logging,
             )
+
             if not _logging.getLogger().handlers:
                 configure_structured_logging()
         except Exception:
@@ -234,6 +242,7 @@ def get_gpu_decision_matrix() -> "JSONDict":
     """Get GPU decision matrix from the global profiler."""
     try:
         from enhanced_agent_bus.profiling import get_global_profiler
+
         metrics = get_global_profiler().get_all_metrics()
         return {name: m.to_dict() for name, m in metrics.items()}
     except Exception:
@@ -244,6 +253,7 @@ def get_profiling_report() -> str:
     """Get profiling report from the global profiler."""
     try:
         from enhanced_agent_bus.profiling import get_global_profiler
+
         return get_global_profiler().generate_report()
     except Exception:
         return str(_impact_scorer_service.get_profiling_report())
@@ -531,6 +541,7 @@ class ImpactScorer:
     ) -> float:
         if PROFILING_AVAILABLE:
             from enhanced_agent_bus.profiling import get_global_profiler
+
             with get_global_profiler().track(self.model_name):
                 return self._calculate_impact_score_impl(message, context)
         return self._calculate_impact_score_impl(message, context)
@@ -910,7 +921,10 @@ class ImpactScorer:
                         truncation=True,
                         max_length=_ORT_MAX_SEQ,
                     )
-                    cached = {"input_ids": tok_out["input_ids"], "attention_mask": tok_out["attention_mask"]}
+                    cached = {
+                        "input_ids": tok_out["input_ids"],
+                        "attention_mask": tok_out["attention_mask"],
+                    }
                     if len(self._ort_tok_cache) < 512:  # bound cache size
                         self._ort_tok_cache[text] = cached
                 outputs = cast(Any, self._ort_session).run(None, cached)
