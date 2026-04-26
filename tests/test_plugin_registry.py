@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+import enhanced_agent_bus.plugin_registry as plugin_registry
 from enhanced_agent_bus.plugin_registry import (
     EXT_MODULES,
     PLUGINS,
@@ -75,3 +76,16 @@ def test_available_returns_false_for_nonexistent(
 ) -> None:
     monkeypatch.setitem(PLUGINS, "_test_nonexistent_xyz", "enhanced_agent_bus._nonexistent_xyz")
     assert available("_test_nonexistent_xyz") is False
+
+
+def test_available_returns_false_for_import_time_type_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(PLUGINS, "_test_broken_import", "broken.import.path")
+
+    def raise_type_error(_module_path: str) -> None:
+        raise TypeError("optional dependency failed during import")
+
+    monkeypatch.setattr(plugin_registry, "find_spec", raise_type_error)
+
+    assert available("_test_broken_import") is False
