@@ -71,6 +71,38 @@ _ADAPTIVE_THRESHOLD_ERRORS = (
 )
 
 
+class _FallbackScaler:
+    """No-op scaler used when sklearn cannot import."""
+
+    def fit_transform(self, values: np.ndarray) -> np.ndarray:
+        return values
+
+
+class _FallbackRegressor:
+    """Mean-target regressor used when sklearn cannot import."""
+
+    n_estimators = 0
+    random_state = None
+    n_jobs = None
+
+    def __init__(self) -> None:
+        self._prediction = 0.0
+
+    def fit(self, values: np.ndarray, target: np.ndarray) -> None:
+        _ = values
+        self._prediction = float(np.mean(target)) if len(target) else 0.0
+
+    def predict(self, values: list[list[float]] | np.ndarray) -> list[float]:
+        return [self._prediction for _ in range(len(values))]
+
+
+class _FallbackAnomalyDetector:
+    """No-op anomaly detector used when sklearn cannot import."""
+
+    def fit(self, values: np.ndarray) -> None:
+        _ = values
+
+
 class AdaptiveThresholds:
     """ML-based dynamic threshold adjustment system."""
 
@@ -88,18 +120,21 @@ class AdaptiveThresholds:
             ImpactLevel.CRITICAL: 0.95,
         }
 
-        # ML Models
-        if not _SKLEARN_AVAILABLE:
-            raise ImportError(
-                "scikit-learn failed to import (scipy compatibility issue). "
-                "Install a compatible scipy: pip install 'scipy<1.17'"
+        # ML Models. If sklearn/scipy cannot import, retain deterministic base
+        # thresholds and disable adaptive retraining instead of blocking startup.
+        if _SKLEARN_AVAILABLE:
+            self.threshold_model = RandomForestRegressor(
+                n_estimators=100, random_state=42, n_jobs=-1
             )
-        self.threshold_model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-        self.anomaly_detector = IsolationForest(contamination=0.1, random_state=42)
+            self.anomaly_detector = IsolationForest(contamination=0.1, random_state=42)
+            self.feature_scaler = StandardScaler()
+        else:
+            self.threshold_model = _FallbackRegressor()
+            self.anomaly_detector = _FallbackAnomalyDetector()
+            self.feature_scaler = _FallbackScaler()
 
         # Training data
         self.training_data: deque[JSONDict] = deque(maxlen=MAX_TRAINING_SAMPLES)
-        self.feature_scaler = StandardScaler()
 
         # Adaptive parameters
         self.learning_rate = 0.1
@@ -239,6 +274,13 @@ class AdaptiveThresholds:
     def _retrain_model(self) -> None:
         """Retrain the ML model with accumulated data and log to MLflow."""
         try:
+            if (
+                self.threshold_model is None
+                or self.anomaly_detector is None
+                or self.feature_scaler is None
+            ):
+                return
+
             if len(self.training_data) < 100:  # Minimum samples for training
                 return
 

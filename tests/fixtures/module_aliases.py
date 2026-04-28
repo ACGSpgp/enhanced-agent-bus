@@ -13,11 +13,19 @@ import sys
 from typing import Any
 from unittest.mock import MagicMock
 
+
+def _install_torch_import_stub() -> None:
+    torch_stub = MagicMock()
+    torch_stub.Tensor = type("Tensor", (), {})
+    torch_stub.__version__ = "0.0.0"
+    sys.modules["torch"] = torch_stub
+
+
 # Only mock torch if it's not installed - torch is now a real dependency
 try:
     import torch
 except ImportError:
-    sys.modules["torch"] = MagicMock()
+    _install_torch_import_stub()
 
 # ``packages/enhanced_agent_bus/tests/conftest.py`` provides the temporary
 # import-time ``ENVIRONMENT=test`` default needed by the sandbox guard before

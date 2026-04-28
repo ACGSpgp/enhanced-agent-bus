@@ -38,7 +38,7 @@ try:
     from river import metrics as river_metrics
 
     RIVER_AVAILABLE = True
-except ImportError:
+except Exception:  # noqa: BLE001 - optional River/Scipy/Torch probes can fail at import time.
     RIVER_AVAILABLE = False
     river_forest = None
     river_metrics = None

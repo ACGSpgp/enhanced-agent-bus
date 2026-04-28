@@ -12,11 +12,19 @@ from unittest.mock import MagicMock
 
 from enhanced_agent_bus.observability.structured_logging import get_logger
 
+
+def _install_torch_import_stub() -> None:
+    torch_stub = MagicMock()
+    torch_stub.Tensor = type("Tensor", (), {})
+    torch_stub.__version__ = "0.0.0"
+    sys.modules["torch"] = torch_stub
+
+
 # Only mock torch if it's not installed - torch is now a real dependency
 try:
     import torch
 except ImportError:
-    sys.modules["torch"] = MagicMock()
+    _install_torch_import_stub()
 
 logger = get_logger(__name__)
 

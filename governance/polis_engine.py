@@ -65,7 +65,7 @@ from .models import (
 try:
     from sklearn.cluster import KMeans
     from sklearn.decomposition import PCA
-except ImportError:
+except Exception:  # noqa: BLE001 - optional sklearn/scipy/torch probes can fail at import time.
     PCA = None  # pyright: ignore[reportConstantRedefinition]
     KMeans = None
 
