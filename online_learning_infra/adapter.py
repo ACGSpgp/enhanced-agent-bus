@@ -33,12 +33,16 @@ except ImportError:
     np_module = None
 
 # Optional River support
+# river imports scipy.stats, which under scipy >= 1.17 runs
+# `issubclass(cls, torch.Tensor)` at module load.  When tests mock torch as a
+# MagicMock (so `torch.Tensor` is not a class) this raises TypeError, not
+# ImportError.  Treat any failure to load river as "river unavailable".
 try:
     from river import forest as river_forest
     from river import metrics as river_metrics
 
     RIVER_AVAILABLE = True
-except ImportError:
+except Exception:
     RIVER_AVAILABLE = False
     river_forest = None
     river_metrics = None
