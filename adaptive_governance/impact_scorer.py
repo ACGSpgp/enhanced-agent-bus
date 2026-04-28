@@ -384,22 +384,26 @@ class ImpactScorer:
             return
 
         try:
-            # Convert dictionary weights to a matrix/tensor
             weight_list = list(self.feature_weights.values())
-            len(weight_list)
-
-            # Create a pseudo-matrix for Sinkhorn (since we have a vector,
-            # we can treat it as a diagonal or repeat it to form a square matrix)
-            # For simplicity in this governance use case, we ensure the vector sums to 1 stably.
-            # If we want a true Birkhoff projection, we need a square matrix.
-            # Here we apply a 1D version of stability.
+            if not weight_list:
+                return
 
             w_tensor = torch.tensor(weight_list, dtype=torch.float32)
             w_normalized = torch.nn.functional.softmax(w_tensor, dim=0)
 
-            # Update weights from stabilized tensor
-            for i, key in enumerate(self.feature_weights.keys()):
-                self.feature_weights[key] = float(w_normalized[i])
+            new_weights = {
+                key: float(w_normalized[i]) for i, key in enumerate(self.feature_weights.keys())
+            }
+
+            # Defensive renormalization: torch's softmax should produce a
+            # vector summing to 1.0, but in some CI environments (mocked torch,
+            # alternate BLAS, edge-case dtypes) the result can drift.  Force
+            # the post-condition explicitly so callers can rely on it.
+            total = sum(new_weights.values())
+            if total > 0 and abs(total - 1.0) > 1e-3:
+                new_weights = {k: v / total for k, v in new_weights.items()}
+
+            self.feature_weights = new_weights
 
         except _IMPACT_SCORER_ERRORS as e:
             logger.warning(f"mHC weight stabilization failed: {e}")
