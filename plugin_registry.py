@@ -73,7 +73,7 @@ def available(name: str) -> bool:
     module_path = PLUGINS[name]
     try:
         return find_spec(module_path) is not None
-    except (ModuleNotFoundError, ValueError):
+    except Exception:  # noqa: BLE001 — scipy 1.17 regression: find_spec triggers issubclass(cls, None)
         return False
 
 
