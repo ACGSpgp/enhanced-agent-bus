@@ -58,8 +58,9 @@ from ..maci_enforcement import MACIEnforcer, MACIRoleRegistry
 from ..persistence.executor import DurableWorkflowExecutor, WorkflowContext
 from ..persistence.repository import InMemoryWorkflowRepository
 
+from ..batch_processor import BatchMessageProcessor
+
 if TYPE_CHECKING:
-    from ..batch_processor import BatchMessageProcessor
     from ..persistence.postgres_repository import PostgresWorkflowRepository
 from .config import (
     API_VERSION,
@@ -263,8 +264,6 @@ def _initialize_batch_processor_state(
     message_processor: MessageProcessor | dict[str, Any],
 ) -> BatchMessageProcessor | None:
     """Initialize batch message processor with defensive error handling."""
-    from ..batch_processor import BatchMessageProcessor
-
     logger.info("Initializing Batch Message Processor...")
     try:
         processor = BatchMessageProcessor(
