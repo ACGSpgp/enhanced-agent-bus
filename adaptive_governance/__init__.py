@@ -68,7 +68,7 @@ def __getattr__(name: str) -> Any:
     return value
 
 
-async def initialize_adaptive_governance(constitutional_hash: str) -> AdaptiveGovernanceEngine:
+async def initialize_adaptive_governance(constitutional_hash: str) -> "AdaptiveGovernanceEngine":
     """Initialize the global adaptive governance engine."""
     global _adaptive_governance
 
@@ -81,7 +81,7 @@ async def initialize_adaptive_governance(constitutional_hash: str) -> AdaptiveGo
     return _adaptive_governance
 
 
-def get_adaptive_governance() -> AdaptiveGovernanceEngine | None:
+def get_adaptive_governance() -> "AdaptiveGovernanceEngine | None":
     """Get the global adaptive governance engine instance."""
     return _adaptive_governance
 
