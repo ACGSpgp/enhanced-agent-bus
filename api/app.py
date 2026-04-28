@@ -60,8 +60,15 @@ from ..persistence.repository import InMemoryWorkflowRepository
 
 from ..batch_processor import BatchMessageProcessor
 
-if TYPE_CHECKING:
+try:
     from ..persistence.postgres_repository import PostgresWorkflowRepository
+except ImportError:
+    PostgresWorkflowRepository = None  # type: ignore[assignment,misc]
+
+if TYPE_CHECKING:
+    from ..persistence.postgres_repository import (
+        PostgresWorkflowRepository as PostgresWorkflowRepository,
+    )  # noqa: F811
 from .config import (
     API_VERSION,
     BATCH_PROCESSOR_ITEM_TIMEOUT_SECONDS,
@@ -220,7 +227,8 @@ async def _initialize_workflow_components(
     """Initialize durable workflow repository and executor."""
     logger.info("Initializing Durable Workflow Executor...")
     try:
-        from ..persistence.postgres_repository import PostgresWorkflowRepository
+        if PostgresWorkflowRepository is None:
+            raise ImportError("asyncpg not installed")
 
         db_url = os.environ.get(
             "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres"

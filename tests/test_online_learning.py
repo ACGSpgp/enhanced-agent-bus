@@ -251,10 +251,10 @@ class TestRiverSklearnAdapter:
     @pytest.fixture
     def adapter(self, mock_river_model):
         """Create a RiverSklearnAdapter with mocked dependencies."""
-        with patch("online_learning.RIVER_AVAILABLE", True):
-            with patch("online_learning.NUMPY_AVAILABLE", True):
-                with patch("online_learning.river_ensemble") as mock_ensemble:
-                    with patch("online_learning.river_metrics") as mock_metrics:
+        with patch("enhanced_agent_bus.online_learning.RIVER_AVAILABLE", True):
+            with patch("enhanced_agent_bus.online_learning.NUMPY_AVAILABLE", True):
+                with patch("enhanced_agent_bus.online_learning.river_ensemble") as mock_ensemble:
+                    with patch("enhanced_agent_bus.online_learning.river_metrics") as mock_metrics:
                         mock_metrics.Accuracy = MagicMock
                         adapter = RiverSklearnAdapter(
                             river_model=mock_river_model,
@@ -285,15 +285,15 @@ class TestRiverSklearnAdapter:
 
     def test_adapter_check_dependencies_river_missing(self):
         """Test that adapter raises when River is missing."""
-        with patch("online_learning.RIVER_AVAILABLE", False):
+        with patch("enhanced_agent_bus.online_learning.RIVER_AVAILABLE", False):
             with pytest.raises(ImportError) as exc_info:
                 RiverSklearnAdapter()
             assert "River is required" in str(exc_info.value)
 
     def test_adapter_check_dependencies_numpy_missing(self):
         """Test that adapter raises when NumPy is missing."""
-        with patch("online_learning.RIVER_AVAILABLE", True):
-            with patch("online_learning.NUMPY_AVAILABLE", False):
+        with patch("enhanced_agent_bus.online_learning.RIVER_AVAILABLE", True):
+            with patch("enhanced_agent_bus.online_learning.NUMPY_AVAILABLE", False):
                 with pytest.raises(ImportError) as exc_info:
                     RiverSklearnAdapter()
                 assert "NumPy is required" in str(exc_info.value)

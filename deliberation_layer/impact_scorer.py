@@ -240,23 +240,27 @@ def get_impact_scorer(config: ScoringConfig | None = None, **kwargs: Any) -> "Im
 
 def get_gpu_decision_matrix() -> "JSONDict":
     """Get GPU decision matrix from the global profiler."""
+    if not PROFILING_AVAILABLE:
+        return {}
     try:
         from enhanced_agent_bus.profiling import get_global_profiler
 
         metrics = get_global_profiler().get_all_metrics()
         return {name: m.to_dict() for name, m in metrics.items()}
     except Exception:
-        return _impact_scorer_service.get_gpu_decision_matrix()
+        return {}
 
 
-def get_profiling_report() -> str:
+def get_profiling_report() -> "JSONDict":
     """Get profiling report from the global profiler."""
+    if not PROFILING_AVAILABLE:
+        return {}
     try:
         from enhanced_agent_bus.profiling import get_global_profiler
 
         return get_global_profiler().generate_report()
     except Exception:
-        return str(_impact_scorer_service.get_profiling_report())
+        return {}
 
 
 class ImpactScorer:
@@ -342,7 +346,7 @@ class ImpactScorer:
                 )
         self.model_name = "distilbert-base-uncased"
         self._bert_enabled = False
-        self._onnx_enabled = use_onnx and ONNX_AVAILABLE
+        self._onnx_enabled = use_onnx and ONNX_AVAILABLE and TRANSFORMERS_AVAILABLE
 
         # Attempt to load Rust DistilBERT model if paths provided or env var set
         _model_dir = model_path or _IMPACT_SCORER_MODEL_DIR or ""

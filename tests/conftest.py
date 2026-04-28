@@ -63,6 +63,17 @@ def _patch_optional(pkg_name: str, flat_name: str | None = None) -> Any | None:
         # pytest importlib mode creates 'core.enhanced_agent_bus' prefix; register there too
         core_eab_name = f"core.enhanced_agent_bus.{flat_name}"
         sys.modules[core_eab_name] = mod
+        # PM-015 (global): ensure `from enhanced_agent_bus import X` / IMPORT_FROM bytecode
+        # returns this module, not a stale direct-import instance.  IMPORT_FROM reads the
+        # attribute from sys.modules["enhanced_agent_bus"], which may still point to a module
+        # object loaded earlier under a different path.  Overwrite it so all callers share
+        # one module dict.
+        _eab_pkg = sys.modules.get("enhanced_agent_bus")
+        if _eab_pkg is not None:
+            try:
+                setattr(_eab_pkg, flat_name, mod)
+            except AttributeError:
+                pass
         return mod
     except ImportError:
         return None
@@ -146,11 +157,43 @@ _cb_factory = _patch_optional(f"{_PKG}.cb_factory")
 # returns fn from M_CBF_PEAB — two different module dicts, breaking singleton patching.
 # Fix: restore the canonical M_CBF_PEAB as the attribute on the package object.
 if _cb_factory is not None:
-    _eab_pkg = sys.modules.get("packages.enhanced_agent_bus") or sys.modules.get(
-        "enhanced_agent_bus"
-    )
+    # PM-015 fix: update the *direct* enhanced_agent_bus package dict so that
+    # `import enhanced_agent_bus.cb_factory as cbf` (IMPORT_FROM bytecode) returns
+    # the same module object as sys.modules['enhanced_agent_bus.cb_factory'].
+    # Using "packages.enhanced_agent_bus" first was wrong — IMPORT_FROM reads the
+    # attribute from sys.modules["enhanced_agent_bus"], not from the packages.* shadow.
+    _eab_pkg = sys.modules.get("enhanced_agent_bus")
     if _eab_pkg is not None:
         _eab_pkg.cb_factory = _cb_factory
+_circuit_breaker = _patch_optional(f"{_PKG}.circuit_breaker")
+if _circuit_breaker is not None:
+    # PM-015: force-alias circuit_breaker submodules under both namespace paths so
+    # that the singleton _registry global is shared regardless of which import path
+    # loads circuit_breaker components.  Without this, `packages.*` and
+    # `enhanced_agent_bus.*` each create a separate `registry` module object with
+    # independent `_registry` dicts — the test's reset_all fixture resets one while
+    # the OPA client holds a reference to the other.
+    for _sub in (
+        "registry",
+        "breaker",
+        "config",
+        "enums",
+        "exceptions",
+        "metrics",
+        "models",
+        "batch",
+        "decorator",
+        "router",
+    ):
+        _pkg_key = f"packages.enhanced_agent_bus.circuit_breaker.{_sub}"
+        _eab_key = f"enhanced_agent_bus.circuit_breaker.{_sub}"
+        _sub_mod = sys.modules.get(_pkg_key) or sys.modules.get(_eab_key)
+        if _sub_mod is not None:
+            sys.modules[_pkg_key] = _sub_mod
+            sys.modules[_eab_key] = _sub_mod
+
+_cb_opa_client = _patch_optional(f"{_PKG}.cb_opa_client")
+
 _deliberation_layer = _patch_optional(f"{_PKG}.deliberation_layer")
 _constitutional = _patch_optional(f"{_PKG}.constitutional")
 _middlewares = _patch_optional(f"{_PKG}.middlewares", flat_name="middleware")

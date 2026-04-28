@@ -1,8 +1,141 @@
 """ACGS-2 Enhanced Agent Communication Bus / Constitutional Hash: 608508a9bd224290"""
 
+import sys as _sys
+
 CONSTITUTIONAL_HASH = "608508a9bd224290"
 __version__ = "3.0.2"
 __constitutional_hash__ = "608508a9bd224290"
+
+
+class Init:
+    """Thin initialization helper bundled with the package."""
+
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH) -> None:
+        self._constitutional_hash = constitutional_hash
+
+    def process(self, value):  # type: ignore[return]
+        if isinstance(value, str):
+            return value
+        return None
+
+
+# _ext_* contribution lists (populated lazily; empty until the ext module is loaded)
+_CB_ALL: list = []
+_PQC_ALL: list = []
+_CW_ALL: list = []
+_COG_ALL: list = []
+_PER_ALL: list = []
+_CBC_ALL: list = []
+_DS_ALL: list = []
+_ES_ALL: list = []
+_MCP_ALL: list = []
+_CM_ALL: list = []
+_LG_ALL: list = []
+_CHAOS_ALL: list = []
+
+__all__: list = [
+    # metadata / init helper
+    "CONSTITUTIONAL_HASH",
+    "Init",
+    # feature flags
+    "CIRCUIT_BREAKER_ENABLED",
+    "DELIBERATION_AVAILABLE",
+    "METERING_AVAILABLE",
+    "METRICS_ENABLED",
+    "USE_RUST",
+    # core classes
+    "EnhancedAgentBus",
+    "BusConfiguration",
+    "MessageProcessor",
+    "MeteringManager",
+    "create_metering_manager",
+    # exceptions
+    "AgentAlreadyRegisteredError",
+    "AgentBusError",
+    "AgentCapabilityError",
+    "AgentError",
+    "AgentNotRegisteredError",
+    "BusAlreadyStartedError",
+    "BusNotStartedError",
+    "BusOperationError",
+    "ConfigurationError",
+    "ConstitutionalError",
+    "ConstitutionalHashMismatchError",
+    "ConstitutionalValidationError",
+    "DeliberationError",
+    "DeliberationTimeoutError",
+    "HandlerExecutionError",
+    "MessageDeliveryError",
+    "MessageError",
+    "MessageRoutingError",
+    "MessageTimeoutError",
+    "MessageValidationError",
+    "OPAConnectionError",
+    "OPANotInitializedError",
+    "PolicyError",
+    "PolicyEvaluationError",
+    "PolicyNotFoundError",
+    "ReviewConsensusError",
+    "SignatureCollectionError",
+    # interfaces
+    "AgentRegistry",
+    "MessageHandler",
+    "MessageRouter",
+    "MetricsCollector",
+    "ValidationStrategy",
+    # models
+    "AgentMessage",
+    "MessageStatus",
+    "MessageType",
+    "ModelPQCMetadata",
+    "MODEL_HASH",
+    "Priority",
+    "RiskLevel",
+    "RoutingContext",
+    "SessionGovernanceConfig",
+    "ValidationStatus",
+    # policy
+    "PolicyResolutionResult",
+    "PolicyResolver",
+    # registry
+    "CapabilityBasedRouter",
+    "CompositeValidationStrategy",
+    "DirectMessageRouter",
+    "DynamicPolicyValidationStrategy",
+    "InMemoryAgentRegistry",
+    "RedisAgentRegistry",
+    "RustValidationStrategy",
+    "StaticHashValidationStrategy",
+    # runtime security
+    "RuntimeSecurityConfig",
+    "RuntimeSecurityScanner",
+    "SecurityEvent",
+    "SecurityEventType",
+    "SecurityScanResult",
+    "SecuritySeverity",
+    "get_runtime_security_scanner",
+    "scan_content",
+    # session context
+    "SessionContext",
+    "SessionContextManager",
+    "SessionContextStore",
+    # SIEM integration
+    "AlertLevel",
+    "AlertManager",
+    "AlertThreshold",
+    "EventCorrelator",
+    "SIEMConfig",
+    "SIEMEventFormatter",
+    "SIEMFormat",
+    "SIEMIntegration",
+    "close_siem",
+    "get_siem_integration",
+    "initialize_siem",
+    "log_security_event",
+    "security_audit",
+    # validators
+    "ValidationResult",
+]
 
 # Single shared state dict: maps attr names to resolved values.
 # Special keys: "\x00lazy" -> _LAZY dict, "\x00ext" -> _ext_exports dict, "\x00flags" -> flags dict
@@ -193,3 +326,11 @@ def __getattr__(name):
             return _S.get(name)
 
     raise AttributeError(f"module 'enhanced_agent_bus' has no attribute {name!r}")
+
+
+# Register sys.modules aliases so all known import paths resolve to this object.
+_self = _sys.modules.get(__name__)
+if _self is not None:
+    _sys.modules.setdefault("enhanced_agent_bus", _self)
+    _sys.modules.setdefault("packages.enhanced_agent_bus", _self)
+    _sys.modules.setdefault("core.enhanced_agent_bus", _self)

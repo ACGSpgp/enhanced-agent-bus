@@ -429,7 +429,8 @@ class TestCollectFromDecisionHistory:
         assert len(result) == 1
 
     def test_debug_log_on_short_input(self, caplog: pytest.LogCaptureFixture) -> None:
-        with caplog.at_level(logging.DEBUG):
+        _logger = "enhanced_agent_bus.adaptive_governance.trace_collector"
+        with caplog.at_level(logging.DEBUG, logger=_logger):
             self.collector.collect_from_decision_history(
                 [_make_decision(ImpactLevel.LOW)], min_length=5
             )
@@ -437,7 +438,8 @@ class TestCollectFromDecisionHistory:
 
     def test_debug_log_on_success(self, caplog: pytest.LogCaptureFixture) -> None:
         decisions = [_make_decision(ImpactLevel.LOW), _make_decision(ImpactLevel.MEDIUM)]
-        with caplog.at_level(logging.DEBUG):
+        _logger = "enhanced_agent_bus.adaptive_governance.trace_collector"
+        with caplog.at_level(logging.DEBUG, logger=_logger):
             self.collector.collect_from_decision_history(decisions)
         assert "trajectories from" in caplog.text
 
@@ -593,7 +595,8 @@ class TestCollectFromLedgerBlocks:
 
     def test_debug_log_on_success(self, caplog: pytest.LogCaptureFixture) -> None:
         blocks = [_audit_block(True), _audit_block(True)]
-        with caplog.at_level(logging.DEBUG):
+        _logger = "enhanced_agent_bus.adaptive_governance.trace_collector"
+        with caplog.at_level(logging.DEBUG, logger=_logger):
             self.collector.collect_from_ledger_blocks(blocks)
         assert "trajectories from" in caplog.text
 

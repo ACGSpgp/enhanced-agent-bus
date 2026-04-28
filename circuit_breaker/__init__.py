@@ -60,8 +60,6 @@ try:
 except ImportError:
     CONSTITUTIONAL_HASH = "standalone"
 
-from enhanced_agent_bus.circuit_breaker.models import CircuitBreakerMetrics, QueuedRequest
-
 # Batch circuit breaker (rate-based, for batch processing)
 from .batch import CircuitBreaker as BatchCircuitBreaker
 from .batch import CircuitBreakerConfig as BatchCircuitBreakerConfig
@@ -91,6 +89,7 @@ from .metrics import (
     acgs_circuit_breaker_state_changes_total,
     acgs_circuit_breaker_successes_total,
 )
+from .models import CircuitBreakerMetrics, QueuedRequest
 
 # Registry
 from .registry import (
@@ -140,3 +139,10 @@ __all__ = [
     # Decorator
     "with_service_circuit_breaker",
 ]
+
+import sys as _sys
+
+_self = _sys.modules.get(__name__)
+if _self is not None:
+    _sys.modules.setdefault("enhanced_agent_bus.circuit_breaker", _self)
+    _sys.modules.setdefault("packages.enhanced_agent_bus.circuit_breaker", _self)

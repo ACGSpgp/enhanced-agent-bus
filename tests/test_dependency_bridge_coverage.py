@@ -177,7 +177,7 @@ class TestIsFeatureAvailable:
     def test_unknown_feature_returns_false(self, caplog):
         from enhanced_agent_bus.dependency_bridge import is_feature_available
 
-        with caplog.at_level(logging.WARNING):
+        with caplog.at_level(logging.WARNING, logger="enhanced_agent_bus.dependency_bridge"):
             result = is_feature_available("NON_EXISTENT_FEATURE_XYZ")
 
         assert result is False
