@@ -26,8 +26,17 @@ from datetime import UTC, datetime
 from typing import Any, cast
 
 import numpy as np
-from sklearn.ensemble import IsolationForest, RandomForestRegressor
-from sklearn.preprocessing import StandardScaler
+
+try:
+    from sklearn.ensemble import IsolationForest, RandomForestRegressor
+    from sklearn.preprocessing import StandardScaler
+
+    _SKLEARN_AVAILABLE = True
+except Exception:  # noqa: BLE001 — scipy 1.17 regression: issubclass(cls, None) at import time
+    _SKLEARN_AVAILABLE = False
+    IsolationForest = None  # type: ignore[assignment,misc]
+    RandomForestRegressor = None  # type: ignore[assignment,misc]
+    StandardScaler = None  # type: ignore[assignment,misc]
 
 from enhanced_agent_bus.bus_types import JSONDict
 from enhanced_agent_bus.observability.structured_logging import get_logger
@@ -80,6 +89,11 @@ class AdaptiveThresholds:
         }
 
         # ML Models
+        if not _SKLEARN_AVAILABLE:
+            raise ImportError(
+                "scikit-learn failed to import (scipy compatibility issue). "
+                "Install a compatible scipy: pip install 'scipy<1.17'"
+            )
         self.threshold_model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
         self.anomaly_detector = IsolationForest(contamination=0.1, random_state=42)
 
