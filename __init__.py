@@ -1,10 +1,13 @@
 """ACGS-2 Enhanced Agent Communication Bus / Constitutional Hash: 608508a9bd224290"""
 
 import sys
+from importlib.util import find_spec
 
 _module = sys.modules[__name__]
-for _alias in ("enhanced_agent_bus", "packages.enhanced_agent_bus", "core.enhanced_agent_bus"):
-    sys.modules[_alias] = _module
+sys.modules["enhanced_agent_bus"] = _module
+for _parent_alias in ("packages", "core"):
+    if _parent_alias in sys.modules or find_spec(_parent_alias) is not None:
+        sys.modules[f"{_parent_alias}.enhanced_agent_bus"] = _module
 
 CONSTITUTIONAL_HASH = "608508a9bd224290"
 __version__ = "3.0.2"
