@@ -14,6 +14,33 @@ CONSTITUTIONAL_HASH = "608508a9bd224290"
 __version__ = "3.0.2"
 __constitutional_hash__ = "608508a9bd224290"
 
+
+class Init:
+    """Compatibility initialization helper."""
+
+    def __init__(self, constitutional_hash: str = CONSTITUTIONAL_HASH):
+        self._constitutional_hash = constitutional_hash
+
+    def process(self, value: str | None) -> str | None:
+        if isinstance(value, str) or value is None:
+            return value
+        return None
+
+
+_CB_ALL: list[str] = []
+_PQC_ALL: list[str] = []
+_CW_ALL: list[str] = []
+_COG_ALL: list[str] = []
+_PER_ALL: list[str] = []
+_CBC_ALL: list[str] = []
+_DS_ALL: list[str] = []
+_ES_ALL: list[str] = []
+_MCP_ALL: list[str] = []
+_CM_ALL: list[str] = []
+_LG_ALL: list[str] = []
+_CHAOS_ALL: list[str] = []
+
+
 # Single shared state dict: maps attr names to resolved values.
 # Special keys: "\x00lazy" -> _LAZY dict, "\x00ext" -> _ext_exports dict, "\x00flags" -> flags dict
 _S = {}
@@ -114,6 +141,22 @@ def __getattr__(name):
             "ValidationResult": ("enhanced_agent_bus.validators", None),
         }
         _S["\x00ext"] = {}
+
+    if name == "__all__":
+        exports = [
+            "CONSTITUTIONAL_HASH",
+            "Init",
+            "__constitutional_hash__",
+            "__version__",
+            *[n for n in lazy if not n.startswith("_")],
+            "CIRCUIT_BREAKER_ENABLED",
+            "DELIBERATION_AVAILABLE",
+            "METERING_AVAILABLE",
+            "METRICS_ENABLED",
+            "USE_RUST",
+        ]
+        _S[name] = exports
+        return exports
 
     if name in (
         "CIRCUIT_BREAKER_ENABLED",
