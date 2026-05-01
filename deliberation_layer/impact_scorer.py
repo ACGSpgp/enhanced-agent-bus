@@ -249,14 +249,17 @@ def get_gpu_decision_matrix() -> "JSONDict":
         return _impact_scorer_service.get_gpu_decision_matrix()
 
 
-def get_profiling_report() -> str:
+def get_profiling_report() -> "JSONDict | str":
     """Get profiling report from the global profiler."""
+    if not PROFILING_AVAILABLE:
+        return _impact_scorer_service.get_profiling_report()
+
     try:
         from enhanced_agent_bus.profiling import get_global_profiler
 
         return get_global_profiler().generate_report()
     except Exception:
-        return str(_impact_scorer_service.get_profiling_report())
+        return _impact_scorer_service.get_profiling_report()
 
 
 class ImpactScorer:
