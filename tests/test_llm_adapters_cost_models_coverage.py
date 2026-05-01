@@ -499,10 +499,20 @@ class TestBudgetLimitRecordUsage:
         b = _make_budget()
         b.daily_usage = 10.0
         b.monthly_usage = 50.0
-        yesterday = datetime.now(UTC) - timedelta(days=1)
-        b.last_reset = yesterday
 
-        b.record_usage(1.0)
+        now = datetime.now(UTC)
+        frozen_now = now.replace(day=2) if now.day == 1 else now
+        b.last_reset = frozen_now - timedelta(days=1)
+
+        class FrozenDateTime(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                if tz is None:
+                    return frozen_now.replace(tzinfo=None)
+                return frozen_now.astimezone(tz)
+
+        with patch("enhanced_agent_bus.llm_adapters.cost.models.datetime", FrozenDateTime):
+            b.record_usage(1.0)
         # daily should reset to 0 then add 1.0
         assert b.daily_usage == pytest.approx(1.0)
         # monthly should NOT reset (same month, assuming test runs within same month)
