@@ -20,6 +20,7 @@ Key Features:
 from __future__ import annotations
 
 import asyncio
+import math
 import os
 import sys
 from collections import deque
@@ -396,10 +397,17 @@ class ImpactScorer:
 
             w_tensor = torch.tensor(weight_list, dtype=torch.float32)
             w_normalized = torch.nn.functional.softmax(w_tensor, dim=0)
+            normalized_values = [float(w_normalized[i]) for i in range(len(weight_list))]
+            total = sum(normalized_values)
+            if not math.isfinite(total) or not math.isclose(total, 1.0, rel_tol=1e-4):
+                max_weight = max(weight_list)
+                exp_values = [math.exp(weight - max_weight) for weight in weight_list]
+                exp_total = sum(exp_values)
+                normalized_values = [value / exp_total for value in exp_values]
 
             # Update weights from stabilized tensor
             for i, key in enumerate(self.feature_weights.keys()):
-                self.feature_weights[key] = float(w_normalized[i])
+                self.feature_weights[key] = normalized_values[i]
 
         except _IMPACT_SCORER_ERRORS as e:
             logger.warning(f"mHC weight stabilization failed: {e}")
