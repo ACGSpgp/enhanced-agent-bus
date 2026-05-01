@@ -53,6 +53,16 @@ Usage:
             raise
 """
 
+import sys
+from importlib.util import find_spec
+
+_module = sys.modules[__name__]
+if hasattr(_module, "__path__"):
+    sys.modules["enhanced_agent_bus.circuit_breaker"] = _module
+    for _parent_alias in ("packages", "core"):
+        if _parent_alias in sys.modules or find_spec(_parent_alias) is not None:
+            sys.modules[f"{_parent_alias}.enhanced_agent_bus.circuit_breaker"] = _module
+
 # Import centralized constitutional hash
 # Models
 try:

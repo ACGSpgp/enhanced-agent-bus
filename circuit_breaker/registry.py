@@ -10,7 +10,9 @@ circuit breakers and provides global access functions.
 from __future__ import annotations
 
 import asyncio
+import sys
 from datetime import UTC, datetime, timezone
+from importlib.util import find_spec
 from typing import TYPE_CHECKING, TypeAlias
 
 try:
@@ -29,6 +31,12 @@ from .config import SERVICE_CIRCUIT_CONFIGS, ServiceCircuitConfig, get_service_c
 from .enums import CircuitState, ServiceSeverity
 
 logger = get_logger(__name__)
+
+_module = sys.modules[__name__]
+sys.modules["enhanced_agent_bus.circuit_breaker.registry"] = _module
+for _parent_alias in ("packages", "core"):
+    if _parent_alias in sys.modules or find_spec(_parent_alias) is not None:
+        sys.modules[f"{_parent_alias}.enhanced_agent_bus.circuit_breaker.registry"] = _module
 
 
 class ServiceCircuitBreakerRegistry:
