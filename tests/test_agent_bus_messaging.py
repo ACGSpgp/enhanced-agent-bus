@@ -240,7 +240,9 @@ class TestMessageHandlerFallback:
 
     async def test_decide_message_governance_separates_delivery_decision(self, sample_message):
         processor = MagicMock()
-        processor.process = AsyncMock(return_value=ValidationResult(is_valid=True, decision="ALLOW"))
+        processor.process = AsyncMock(
+            return_value=ValidationResult(is_valid=True, decision="ALLOW")
+        )
         handler = MessageHandler(
             processor=processor,
             router_component=MagicMock(),
