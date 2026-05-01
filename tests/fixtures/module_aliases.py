@@ -142,11 +142,10 @@ _cb_factory = _patch_optional(f"{_PKG}.cb_factory")
 # returns fn from M_CBF_PEAB — two different module dicts, breaking singleton patching.
 # Fix: restore the canonical M_CBF_PEAB as the attribute on the package object.
 if _cb_factory is not None:
-    _eab_pkg = sys.modules.get("packages.enhanced_agent_bus") or sys.modules.get(
-        "enhanced_agent_bus"
-    )
-    if _eab_pkg is not None:
-        _eab_pkg.cb_factory = _cb_factory
+    for _eab_pkg_name in ("packages.enhanced_agent_bus", "enhanced_agent_bus"):
+        _eab_pkg = sys.modules.get(_eab_pkg_name)
+        if _eab_pkg is not None:
+            _eab_pkg.cb_factory = _cb_factory
 _deliberation_layer = _patch_optional(f"{_PKG}.deliberation_layer")
 _constitutional = _patch_optional(f"{_PKG}.constitutional")
 _middlewares = _patch_optional(f"{_PKG}.middlewares", flat_name="middleware")
