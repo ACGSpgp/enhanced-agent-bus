@@ -1,5 +1,11 @@
 """ACGS-2 Enhanced Agent Communication Bus / Constitutional Hash: 608508a9bd224290"""
 
+import sys
+
+_module = sys.modules[__name__]
+for _alias in ("enhanced_agent_bus", "packages.enhanced_agent_bus", "core.enhanced_agent_bus"):
+    sys.modules[_alias] = _module
+
 CONSTITUTIONAL_HASH = "608508a9bd224290"
 __version__ = "3.0.2"
 __constitutional_hash__ = "608508a9bd224290"
