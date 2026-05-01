@@ -15,6 +15,8 @@ Public API functions and classes are re-exported from this module to maintain
 backward compatibility with the original single-file structure.
 """
 
+from __future__ import annotations
+
 from importlib import import_module
 from typing import TYPE_CHECKING, Any, TypeAlias
 
