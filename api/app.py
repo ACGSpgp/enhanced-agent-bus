@@ -54,12 +54,12 @@ from ..api_exceptions import (
 # -> dataset_builder -> persistence.repository -> models.
 # Reordering this block breaks startup (cold import regresses ~1500ms).
 from ..message_processor import MessageProcessor
+from ..batch_processor import BatchMessageProcessor
 from ..maci_enforcement import MACIEnforcer, MACIRoleRegistry
 from ..persistence.executor import DurableWorkflowExecutor, WorkflowContext
 from ..persistence.repository import InMemoryWorkflowRepository
 
 if TYPE_CHECKING:
-    from ..batch_processor import BatchMessageProcessor
     from ..persistence.postgres_repository import PostgresWorkflowRepository
 from .config import (
     API_VERSION,
@@ -263,8 +263,6 @@ def _initialize_batch_processor_state(
     message_processor: MessageProcessor | dict[str, Any],
 ) -> BatchMessageProcessor | None:
     """Initialize batch message processor with defensive error handling."""
-    from ..batch_processor import BatchMessageProcessor
-
     logger.info("Initializing Batch Message Processor...")
     try:
         processor = BatchMessageProcessor(
