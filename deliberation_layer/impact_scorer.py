@@ -240,6 +240,9 @@ def get_impact_scorer(config: ScoringConfig | None = None, **kwargs: Any) -> "Im
 
 def get_gpu_decision_matrix() -> "JSONDict":
     """Get GPU decision matrix from the global profiler."""
+    if not PROFILING_AVAILABLE:
+        return _impact_scorer_service.get_gpu_decision_matrix()
+
     try:
         from enhanced_agent_bus.profiling import get_global_profiler
 
