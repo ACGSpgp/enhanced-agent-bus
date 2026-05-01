@@ -342,7 +342,7 @@ class ImpactScorer:
                 )
         self.model_name = "distilbert-base-uncased"
         self._bert_enabled = False
-        self._onnx_enabled = use_onnx and ONNX_AVAILABLE
+        self._onnx_enabled = use_onnx and ONNX_AVAILABLE and TRANSFORMERS_AVAILABLE
 
         # Attempt to load Rust DistilBERT model if paths provided or env var set
         _model_dir = model_path or _IMPACT_SCORER_MODEL_DIR or ""
@@ -829,7 +829,8 @@ class ImpactScorer:
             raise ValueError(
                 f"contexts length ({len(contexts)}) must match messages length ({len(messages)})"
             )
-        if self._onnx_enabled and self._optimizer:
+        has_explicit_contexts = contexts is not None
+        if self._onnx_enabled and self._optimizer and not has_explicit_contexts:
             return self.score_messages_batch(messages)
 
         merged_contexts = []
