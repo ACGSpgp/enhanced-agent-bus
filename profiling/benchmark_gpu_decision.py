@@ -213,7 +213,12 @@ class GPUBenchmark:
 
         # Initialize scorer
         logger.info("📦 Initializing ImpactScorer...")
-        scorer = get_impact_scorer(use_onnx=True)
+        try:
+            scorer = get_impact_scorer(use_onnx=True)
+        except BENCHMARK_SCORER_INIT_ERRORS as e:
+            logger.warning(f"⚠️  Warning: Could not initialize ImpactScorer: {e}")
+            logger.info("    Running with mock scorer for demonstration...")
+            return self._run_mock_benchmark()
         logger.info(f"   Model: {scorer.model_name}")
         logger.info(f"   BERT enabled: {scorer._bert_enabled}")
         logger.info(f"   ONNX enabled: {scorer._onnx_enabled}")
